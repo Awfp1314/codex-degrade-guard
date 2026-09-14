@@ -1,12 +1,10 @@
 <div align="center">
 
-<img src="assets/logo.svg" width="128" height="128" alt="Model Degradation Guard">
+<img src="assets/logo.svg" width="96" height="96" alt="Model Degradation Guard">
 
 # Model Degradation Guard
 
-**写/删前拦住偷偷换弱模型，避免项目被改坏。**
-
-读、搜不打扰。第一次要改文件时先本地自检；高置信命中就暂停问你，确认后本会话放行，结束时提醒人工检查。另外带鹈鹕 / 糖果两套手动体检。
+写/删前拦住偷偷换弱模型
 
 [![CI](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-0.1.5-0B1220?style=flat-square)](CHANGELOG.md)
@@ -14,14 +12,13 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg?style=flat-square)](package.json)
 [![Codex Plugin](https://img.shields.io/badge/Codex-plugin-111827?style=flat-square)](https://developers.openai.com/codex/plugins)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/Awfp1314/codex-degrade-guard/issues)
+[![X](https://img.shields.io/badge/X-@HUTAO667-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/HUTAO667)
 
-[![GitHub stars](https://img.shields.io/github/stars/Awfp1314/codex-degrade-guard?style=social)](https://github.com/Awfp1314/codex-degrade-guard/stargazers)
-[![X @HUTAO667](https://img.shields.io/badge/X-@HUTAO667-000000?logo=x&logoColor=white)](https://x.com/HUTAO667)
-[![Follow on X](https://img.shields.io/twitter/follow/HUTAO667?style=social&label=Follow%20%40HUTAO667)](https://x.com/HUTAO667)
-
-[安装](#安装) · [效果](#实际效果) · [体检](#手动体检) · [贡献](#欢迎贡献) · [X](https://x.com/HUTAO667)
+[安装](#安装) · [效果](#实际效果) · [体检](#手动体检) · [贡献](#欢迎贡献)
 
 </div>
+
+Codex 插件。读、搜不打扰；第一次要改文件时先本地自检，高置信命中弱模型路由就暂停问你。确认后本会话放行，结束时提醒人工检查。另带 `$pelican-test` / `$candy-test` 两套手动体检。
 
 ## 为什么做这个
 
