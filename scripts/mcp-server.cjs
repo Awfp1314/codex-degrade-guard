@@ -32,7 +32,7 @@ const TOOLS = [
   },
   {
     name: 'pelican_probe',
-    description: '手动体检：用固定原句跑鹈鹕骑车首段测试，判断是否被路由到弱模型（不参与写前闸门）。',
+    description: '手动体检：用固定原句生成鹈鹕骑自行车动画并截图。不要用返回的关键词当下结论；必须看截图/HTML 画面再判断（不参与写前闸门）。未见降智通常约 8 分钟。',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -123,14 +123,22 @@ function runProbe(name, args) {
 }
 
 function pelicanSummary(data) {
-  const label = { degraded: '疑似降智', healthy: '未见降智', unknown: '无法判断' }[data.verdict] || data.verdict;
-  return [
+  const label = {
+    needs_visual: '已生成，请看画面判定（不要用关键词下结论）',
+    failed: '未能生成有效画面'
+  }[data.verdict] || data.verdict;
+  const lines = [
     `鹈鹕骑车测试：${label}`,
     `依据：${(data.reasons || []).join('；')}`,
-    `首段：${data.firstParagraph || '(空)'}`,
+    data.screenshot ? `截图：${data.screenshot}` : (data.screenshotError ? `截图：${data.screenshotError}` : '截图：无'),
     data.htmlFiles && data.htmlFiles.length ? `产出 HTML：${data.htmlFiles.join(', ')}` : '产出：没有生成 HTML 文件',
-    `用时：${(data.elapsedMs / 1000).toFixed(1)}s`
-  ].join('\n');
+    `用时：${(data.elapsedMs / 1000).toFixed(1)}s（未见降智通常约 8 分钟）`
+  ];
+  if (data.keywordHints && data.keywordHints.length) {
+    lines.push(`关键词旁证（不作结论）：${data.keywordHints.join('；')}`);
+  }
+  lines.push('判定标准：鹈鹕骑在车上且构图完整 → 未见降智；人和车分离或简笔画 → 疑似降智。');
+  return lines.join('\n');
 }
 
 function candySummary(data) {

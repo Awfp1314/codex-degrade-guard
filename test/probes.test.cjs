@@ -14,28 +14,47 @@ process.env.MODEL_DEGRADATION_GUARD_STATE_DIR = stateDir;
 const sessionState = require('../lib/state.cjs');
 
 const { agentMessages, buildExecArgs, runCodexExec, shouldRetryWithoutHooks } = require('../probes/lib.cjs');
-const { classify, PROMPT: PELICAN_PROMPT } = require('../probes/pelican.cjs');
+const { keywordHints, statusFromRun, findBrowser, screenshotHtml, DEFAULT_PELICAN_TIMEOUT_MS, PROMPT: PELICAN_PROMPT } = require('../probes/pelican.cjs');
 const { runAll, summarize, PROMPT: CANDY_PROMPT, ANSWER_PATTERN } = require('../probes/candy.cjs');
 const { candySummary, pelicanSummary } = require('../scripts/mcp-server.cjs');
 
-test('鹈鹕判定：内联/内嵌 SVG 或首段循环都算降智', () => {
-  assert.equal(classify({ paragraph: '我会用内联 SVG 画一只鹈鹕', reasoning: [] }).verdict, 'degraded');
-  assert.equal(classify({ paragraph: '用 HTML 内嵌 SVG 实现', reasoning: [] }).verdict, 'degraded');
-  assert.equal(classify({ paragraph: '做一个连续循环的骑行动画', reasoning: [] }).verdict, 'degraded');
-  assert.equal(classify({ paragraph: '开始实现', reasoning: ['考虑内联 SVG 方案'] }).verdict, 'degraded');
+test('鹈鹕关键词只作旁证，不再直接定罪', () => {
+  const degradedHint = keywordHints({ paragraph: '我会用内联 SVG 画一只鹈鹕', reasoning: [] });
+  assert.ok(degradedHint.some((line) => /旁证/.test(line)));
+  const loopHint = keywordHints({ paragraph: '做一个连续循环的骑行动画', reasoning: [] });
+  assert.ok(loopHint.some((line) => /循环/.test(line)));
+  const healthyHint = keywordHints({ paragraph: '我会做一个踩踏动作的动画', reasoning: [] });
+  assert.ok(healthyHint.some((line) => /踩踏/.test(line)));
+  assert.deepEqual(keywordHints({ paragraph: '我来创建一个 HTML 文件', reasoning: [] }), []);
 });
 
-test('鹈鹕判定：踩踏/背景动态算正常', () => {
-  assert.equal(classify({ paragraph: '我会做一个踩踏动作的动画', reasoning: [] }).verdict, 'healthy');
-  assert.equal(classify({ paragraph: '加上沿途风景和背景移动', reasoning: [] }).verdict, 'healthy');
+test('鹈鹕结论看是否生成了画面，不看关键词', () => {
+  assert.equal(statusFromRun({ htmlFiles: ['a.html'] }).verdict, 'needs_visual');
+  assert.equal(statusFromRun({ htmlFiles: ['a.html'], timedOut: true }).verdict, 'needs_visual');
+  assert.equal(statusFromRun({ htmlFiles: [], timedOut: true }).verdict, 'failed');
+  assert.equal(statusFromRun({ htmlFiles: [] }).verdict, 'failed');
 });
 
-test('鹈鹕判定：没有关键词时不乱下结论', () => {
-  assert.equal(classify({ paragraph: '我来创建一个 HTML 文件', reasoning: [] }).verdict, 'unknown');
+test('鹈鹕单次超时默认 12 分钟', () => {
+  assert.equal(DEFAULT_PELICAN_TIMEOUT_MS, 12 * 60 * 1000);
 });
 
 test('鹈鹕探针用的是固定原句', () => {
   assert.equal(PELICAN_PROMPT, '创建一个 HTML，内容是 SVG 绘制一个鹈鹕骑自行车的 2D 动画');
+});
+
+test('本机有 Chrome/Edge 时能给本地 HTML 截图', { skip: !findBrowser() }, () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdg-shot-'));
+  const html = path.join(dir, 'page.html');
+  fs.writeFileSync(html, '<html><body><h1>pelican</h1></body></html>');
+  try {
+    const shot = screenshotHtml(html);
+    assert.equal(shot.error, null, shot.error);
+    assert.ok(shot.path && fs.existsSync(shot.path));
+    assert.ok(fs.statSync(shot.path).size > 100);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('糖果判定：正确答案是独立的 21', () => {
@@ -165,11 +184,16 @@ test('糖果并行调度：2 路并发确实同时开跑', async () => {
 
 test('MCP 摘要带结论与关键数据', () => {
   const pelican = pelicanSummary({
-    verdict: 'degraded', reasons: ['首段出现「循环」'], firstParagraph: '循环骑行',
-    htmlFiles: ['/tmp/a.html'], elapsedMs: 12345
+    verdict: 'needs_visual',
+    reasons: ['请看画面'],
+    htmlFiles: ['/tmp/a.html'],
+    screenshot: '/tmp/a.png',
+    elapsedMs: 12345
   });
-  assert.match(pelican, /疑似降智/);
+  assert.match(pelican, /请看画面/);
+  assert.match(pelican, /\/tmp\/a\.png/);
   assert.match(pelican, /\/tmp\/a\.html/);
+  assert.doesNotMatch(pelican, /鹈鹕骑车测试：疑似降智/);
 
   const candy = candySummary({
     summary: { verdict: 'healthy', correct: 4, graded: 5, truncated: 0 },

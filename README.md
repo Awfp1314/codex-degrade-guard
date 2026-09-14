@@ -7,7 +7,7 @@
 写/删前拦住偷偷换弱模型
 
 [![CI](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.1.5-0B1220?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.6-0B1220?style=flat-square)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg?style=flat-square)](package.json)
 [![Codex Plugin](https://img.shields.io/badge/Codex-plugin-111827?style=flat-square)](https://developers.openai.com/codex/plugins)
@@ -129,16 +129,16 @@ codex plugin add model-degradation-guard@model-degradation-guard
 
 | 技能 | 测什么 | 怎么看 |
 |------|--------|--------|
-| `$pelican-test` | 固定原句「鹈鹕骑自行车」 | 首段「内嵌/内联 SVG」或「循环」→ 疑似降智；「踩踏 / 沿途风景 / 背景移动」→ 未见降智 |
+| `$pelican-test` | 固定原句「鹈鹕骑自行车」，约 8 分钟 | **看画面**：骑在车上、构图完整 → 未见降智；人和车分离、简笔画 → 疑似降智。关键词不作结论 |
 | `$candy-test` | 同一道排列组合题跑 5 次 | ≥3/5 且无 516 截断 → 正常；0/5 或多次 516 → 能力截断 |
 
 两个技能都会**另起空会话、消耗真实额度**（糖果 5 次 = 5 个空会话）。结果只是参考，不能单独当作「必须停手」的鉴定。
 
-**鹈鹕：正常号 vs 降智号**
+**鹈鹕：看画面，不要看文案**
 
-| 未见降智（首段出现「踩踏」） | 疑似降智（首段出现「内嵌 SVG」） |
+| 未见降智：骑在车上，构图完整 | 疑似降智：人和车分离，一眼能看出来 |
 |---|---|
-| ![正常号鹈鹕测试](docs/screenshots/pelican-healthy.png) | ![降智号鹈鹕测试](docs/screenshots/pelican-degraded.png) |
+| ![未见降智的鹈鹕动画](docs/screenshots/pelican-art-healthy.png) | ![疑似降智的鹈鹕动画](docs/screenshots/pelican-art-degraded.png) |
 
 **糖果：正常号 vs 降智号**
 
@@ -249,7 +249,7 @@ skills/                     # pelican-test / candy-test
 test/
 ```
 
-环境变量：`MODEL_DEGRADATION_GUARD_STATE_DIR`、`MODEL_DEGRADATION_GUARD_DISABLE`、`MODEL_DEGRADATION_GUARD_CODEX_BIN`、`MODEL_DEGRADATION_GUARD_PROBE_TIMEOUT_MS`、`MODEL_DEGRADATION_GUARD_WARN_EVERY_TURNS`、`MODEL_DEGRADATION_GUARD_WARN_MIN_INTERVAL_MS`、`MODEL_DEGRADATION_GUARD_RUN_TIMEOUT_MS`。状态目录跟随 `CODEX_HOME`（默认 `~/.codex`）。
+环境变量：`MODEL_DEGRADATION_GUARD_STATE_DIR`、`MODEL_DEGRADATION_GUARD_DISABLE`、`MODEL_DEGRADATION_GUARD_CODEX_BIN`、`MODEL_DEGRADATION_GUARD_PROBE_TIMEOUT_MS`、`MODEL_DEGRADATION_GUARD_PELICAN_TIMEOUT_MS`（默认 12 分钟）、`MODEL_DEGRADATION_GUARD_WARN_EVERY_TURNS`、`MODEL_DEGRADATION_GUARD_WARN_MIN_INTERVAL_MS`、`MODEL_DEGRADATION_GUARD_RUN_TIMEOUT_MS`。状态目录跟随 `CODEX_HOME`（默认 `~/.codex`）。
 
 `.mcp.json` 的 `cwd` 必须写 `./`。`${PLUGIN_ROOT}` 在这里不会被展开。
 

@@ -2,6 +2,17 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.6] - 2026-09-15
+
+### Changed
+
+- **鹈鹕体检改看画面**：判定「鹈鹕是否骑在车上、构图是否完整」，不再用首段「内嵌 SVG / 循环 / 踩踏」定罪
+- 单次超时从 5 分钟提到 **12 分钟**（未见降智通常约 8 分钟才画完）
+
+### Added
+
+- 生成后尝试用本机 Chrome/Edge 截图，方便当前会话看图判定
+
 ## [0.1.5] - 2026-09-15
 
 ### Added

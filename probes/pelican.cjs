@@ -1,23 +1,25 @@
 #!/usr/bin/env node
 'use strict';
 
-// 手动体检：鹈鹕骑车首段测试。
+// 手动体检：鹈鹕骑车。
 //
-// 固定原句，不能添油加醋，也不能有其他 skill 干扰：
+// 固定原句，不能添油加醋：
 //   创建一个 HTML，内容是 SVG 绘制一个鹈鹕骑自行车的 2D 动画
 //
-// 判定（docs/mvp.md）：
-//   思考里出现「内联/内嵌 SVG」，或首段出现「循环」→ 降智
-//   首段出现「踩踏 / 沿途风景 / 背景移动」→ 未降智
+// 判定看画面，不看首段关键词：
+//   未见降智：鹈鹕骑在车上，构图完整，大约 8 分钟才画完
+//   疑似降智：人和车分离、简笔画、一眼就能看出没画完
 //
 // 这是账号体检，不参与写前闸门。
 
+const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const probe = require('./lib.cjs');
 
-// 固定原句与关键词口径来自社区方法，见 docs/background.md（不得改写这句话）。
 const PROMPT = '创建一个 HTML，内容是 SVG 绘制一个鹈鹕骑自行车的 2D 动画';
+const DEFAULT_PELICAN_TIMEOUT_MS = Number(process.env.MODEL_DEGRADATION_GUARD_PELICAN_TIMEOUT_MS) || 12 * 60 * 1000;
 
 const SVG_KEYWORDS = /(内嵌\s*SVG|内联\s*SVG)/i;
 const LOOP_KEYWORDS = /循环/;
@@ -36,21 +38,34 @@ function parseArgs(argv) {
   return options;
 }
 
-function classify({ paragraph, reasoning }) {
+function keywordHints({ paragraph, reasoning }) {
   const firstParagraphText = paragraph || '';
   const joinedReasoning = (reasoning || []).join('\n');
-  const reasons = [];
-
+  const hints = [];
   if (SVG_KEYWORDS.test(firstParagraphText) || SVG_KEYWORDS.test(joinedReasoning)) {
-    reasons.push('思考/首段出现「内联/内嵌 SVG」');
+    hints.push('首段/思考提到「内联/内嵌 SVG」（旧口径旁证，不能当结论）');
   }
-  if (LOOP_KEYWORDS.test(firstParagraphText)) reasons.push('首段出现「循环」');
-  if (reasons.length > 0) return { verdict: 'degraded', reasons };
-
+  if (LOOP_KEYWORDS.test(firstParagraphText)) {
+    hints.push('首段出现「循环」（旧口径旁证，不能当结论）');
+  }
   if (HEALTHY_KEYWORDS.test(firstParagraphText)) {
-    return { verdict: 'healthy', reasons: ['首段描述了踩踏/背景动态'] };
+    hints.push('首段描述了踩踏/背景动态（旧口径旁证，不能当结论）');
   }
-  return { verdict: 'unknown', reasons: ['首段没有出现已知关键词，请人工判读'] };
+  return hints;
+}
+
+function statusFromRun({ htmlFiles, timedOut, failure }) {
+  if (htmlFiles && htmlFiles.length > 0) {
+    return {
+      verdict: 'needs_visual',
+      reasons: ['请看画面：鹈鹕是否骑在车上、构图是否完整。人和车分离或简笔画 → 疑似降智']
+    };
+  }
+  if (timedOut) {
+    return { verdict: 'failed', reasons: ['生成超时且没有 HTML。未见降智通常要约 8 分钟'] };
+  }
+  if (failure) return { verdict: 'failed', reasons: [failure] };
+  return { verdict: 'failed', reasons: ['没有生成 HTML 文件'] };
 }
 
 function collectHtmlFiles(dir) {
@@ -76,6 +91,64 @@ function collectHtmlFiles(dir) {
   return found;
 }
 
+function browserCandidates() {
+  if (process.platform === 'win32') {
+    return [
+      path.join(process.env['PROGRAMFILES'] || 'C:\\Program Files', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+      path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+      path.join(process.env['PROGRAMFILES'] || 'C:\\Program Files', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Google', 'Chrome', 'Application', 'chrome.exe')
+    ];
+  }
+  if (process.platform === 'darwin') {
+    return [
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+    ];
+  }
+  return [
+    '/usr/bin/microsoft-edge',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser'
+  ];
+}
+
+function findBrowser() {
+  for (const candidate of browserCandidates()) {
+    try {
+      if (candidate && fs.statSync(candidate).isFile()) return candidate;
+    } catch {
+      // 继续找。
+    }
+  }
+  return null;
+}
+
+function screenshotHtml(htmlFile) {
+  const browser = findBrowser();
+  if (!browser) return { path: null, error: '本机没有 Chrome/Edge，无法自动截图；请打开 HTML 看画面' };
+
+  const out = htmlFile.replace(/\.html?$/i, '') + '.png';
+  const result = spawnSync(browser, [
+    '--headless=new',
+    '--disable-gpu',
+    '--hide-scrollbars',
+    '--no-first-run',
+    '--window-size=1280,800',
+    `--screenshot=${out}`,
+    pathToFileURL(htmlFile).href
+  ], { timeout: 20000, encoding: 'utf8' });
+
+  if (result.error) return { path: null, error: `截图失败：${result.error.message}` };
+  if (!fs.existsSync(out) || fs.statSync(out).size < 100) {
+    const detail = String(result.stderr || result.stdout || '').trim().split('\n').slice(-1)[0];
+    return { path: null, error: detail ? `截图失败：${detail}` : '截图失败' };
+  }
+  return { path: out, error: null };
+}
+
 function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
@@ -84,55 +157,66 @@ function main() {
   }
 
   const workspace = probe.makeTempDir('mdg-pelican');
-  const run = probe.runCodexExec({
+  return probe.runCodexExec({
     prompt: PROMPT,
     model: options.model,
     reasoningEffort: options.reasoningEffort,
     cwd: workspace,
     sandbox: 'workspace-write',
+    timeoutMs: DEFAULT_PELICAN_TIMEOUT_MS,
     extraArgs: ['--dangerously-bypass-hook-trust']
-  });
-  return run.then((result) => report(result, workspace, options));
+  }).then((result) => report(result, workspace, options));
 }
 
 function report(run, workspace, options) {
   const messages = probe.agentMessages(run.events);
   const paragraph = probe.firstParagraph(messages[0] || '');
   const reasoning = probe.reasoningTexts(run.events);
-  const verdict = classify({ paragraph, reasoning });
   const html = collectHtmlFiles(workspace);
+  const hints = keywordHints({ paragraph, reasoning });
+  const status = statusFromRun({ htmlFiles: html, timedOut: run.timedOut, failure: run.failure });
+  const shot = html[0] ? screenshotHtml(html[0]) : { path: null, error: null };
   const usage = probe.usageOf(run.events);
 
   const result = {
     probe: 'pelican',
     prompt: PROMPT,
-    verdict: verdict.verdict,
-    reasons: verdict.reasons,
+    verdict: status.verdict,
+    reasons: status.reasons,
+    keywordHints: hints,
     firstParagraph: paragraph,
     htmlFiles: html,
+    screenshot: shot.path,
+    screenshotError: shot.error,
     workspace,
     usage,
     exitCode: run.exitCode,
     elapsedMs: run.elapsedMs,
+    timeoutMs: DEFAULT_PELICAN_TIMEOUT_MS,
     failure: run.failure || null
   };
 
   if (options.json) {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    return;
+    return result;
   }
 
-  const label = { degraded: '疑似降智', healthy: '未见降智', unknown: '无法判断' }[verdict.verdict];
+  const label = {
+    needs_visual: '已生成，请看画面判定',
+    failed: '未能生成有效画面'
+  }[status.verdict] || status.verdict;
   const lines = [
     `鹈鹕骑车测试：${label}`,
-    `依据：${verdict.reasons.join('；')}`,
-    `首段：${paragraph || '(空)'}`,
-    html.length ? `产出：${html.join(', ')}` : '产出：没有生成 HTML 文件',
-    `用时：${(run.elapsedMs / 1000).toFixed(1)}s`
+    `依据：${status.reasons.join('；')}`,
+    shot.path ? `截图：${shot.path}` : (shot.error ? `截图：${shot.error}` : '截图：无'),
+    html.length ? `产出 HTML：${html.join(', ')}` : '产出：没有生成 HTML 文件',
+    `用时：${(run.elapsedMs / 1000).toFixed(1)}s（未见降智通常约 8 分钟）`
   ];
+  if (hints.length) lines.push(`关键词旁证（不作结论）：${hints.join('；')}`);
   if (run.failure) lines.push(`运行告警：${run.failure}`);
-  if (!options.keep) lines.push(`（临时目录：${workspace}，可直接查看生成的 HTML）`);
+  if (!options.keep) lines.push(`（临时目录：${workspace}）`);
   process.stdout.write(`${lines.join('\n')}\n`);
+  return result;
 }
 
 if (require.main === module) {
@@ -144,4 +228,13 @@ if (require.main === module) {
     });
 }
 
-module.exports = { PROMPT, classify, main, report };
+module.exports = {
+  DEFAULT_PELICAN_TIMEOUT_MS,
+  PROMPT,
+  findBrowser,
+  keywordHints,
+  main,
+  report,
+  screenshotHtml,
+  statusFromRun
+};
