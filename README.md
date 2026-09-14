@@ -74,9 +74,14 @@ codex plugin add model-degradation-guard@model-degradation-guard
 codex plugin list
 ```
 
-列表里应能看到 `model-degradation-guard`，状态为 `installed, enabled`。某些版本会弹钩子确认框，允许即可。
+列表里应能看到 `model-degradation-guard`，状态为 `installed, enabled`。
 
-装完后**新开一个对话**（钩子和技能是会话启动时加载的）。右侧「来源」里应出现 `model-degradation-guard`。
+**必须信任钩子，否则写前闸门不会运行。** 安装或启用都不会自动信任。没点信任时，技能和 MCP 还在，但 `UserPromptSubmit` / `PreToolUse` / `Stop` 会被跳过，等于没装闸门。
+
+1. **CLI：** 新开会话若出现 `Hooks need review`，选 Review 或 Trust all。也可以输入 `/hooks`，把本插件三条钩子标成信任。
+2. **Codex App：** 打开 **设置 → 钩子**，找到 `model-degradation-guard` 的三条（写前检查、本轮自检注入、结束提醒），全部允许 / 信任。App 不一定弹窗，不进设置就可能被静默跳过。
+
+然后**新开一个对话**（钩子和技能是会话启动时加载的）。右侧「来源」里应出现 `model-degradation-guard`。
 
 本地克隆后再装也可以：
 
@@ -102,9 +107,16 @@ codex plugin add model-degradation-guard@model-degradation-guard
 2. codex plugin add model-degradation-guard@model-degradation-guard
 3. codex plugin list
 
-确认 list 里这一项是 installed 且 enabled。如果弹出钩子信任确认，告诉我去点允许。
-全部完成后用一两句话告诉我：装成功了没有、是否 enabled、下一步要不要新开对话。
+确认 list 里这一项是 installed 且 enabled。
 不要改我的项目代码。
+
+装完后你必须单独提醒我去信任钩子，不能只说「装好了」。用下面这段原话（可略作换行），不要省略：
+
+⚠️ 还没完：必须信任钩子，写前闸门才会生效。
+安装不会自动信任。请立刻去设置：
+- Codex App：设置 → 钩子，把 model-degradation-guard 的 UserPromptSubmit、PreToolUse、Stop 全部点允许/信任。
+- CLI：新开会话若出现 Hooks need review，选 Trust all；或输入 /hooks 把这三条标成信任。
+不点的话技能还在，但拦不住写/删。信任后再新开一个对话。
 ```
 
 ### 重装注意
