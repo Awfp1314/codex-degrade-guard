@@ -107,30 +107,31 @@ function browserCandidates() {
     ];
   }
   return [
-    '/usr/bin/microsoft-edge',
     '/usr/bin/google-chrome',
     '/usr/bin/google-chrome-stable',
     '/usr/bin/chromium',
-    '/usr/bin/chromium-browser'
+    '/usr/bin/chromium-browser',
+    '/usr/bin/microsoft-edge'
   ];
 }
 
-function findBrowser() {
+function installedBrowsers() {
+  const found = [];
   for (const candidate of browserCandidates()) {
     try {
-      if (candidate && fs.statSync(candidate).isFile()) return candidate;
+      if (candidate && fs.statSync(candidate).isFile()) found.push(candidate);
     } catch {
       // 继续找。
     }
   }
-  return null;
+  return found;
 }
 
-function screenshotHtml(htmlFile) {
-  const browser = findBrowser();
-  if (!browser) return { path: null, error: '本机没有 Chrome/Edge，无法自动截图；请打开 HTML 看画面' };
+function findBrowser() {
+  return installedBrowsers()[0] || null;
+}
 
-  const out = htmlFile.replace(/\.html?$/i, '') + '.png';
+function screenshotWith(browser, htmlFile, out) {
   const result = spawnSync(browser, [
     '--headless=new',
     '--disable-gpu',
@@ -141,14 +142,31 @@ function screenshotHtml(htmlFile) {
     '--window-size=1280,800',
     `--screenshot=${out}`,
     pathToFileURL(htmlFile).href
-  ], { timeout: 20000, encoding: 'utf8' });
+  ], { timeout: 12000, encoding: 'utf8' });
 
-  if (result.error) return { path: null, error: `截图失败：${result.error.message}` };
+  if (result.error) return { path: null, error: result.error.message };
   if (!fs.existsSync(out) || fs.statSync(out).size < 100) {
     const detail = String(result.stderr || result.stdout || '').trim().split('\n').slice(-1)[0];
-    return { path: null, error: detail ? `截图失败：${detail}` : '截图失败' };
+    return { path: null, error: detail || '截图失败' };
   }
   return { path: out, error: null };
+}
+
+function screenshotHtml(htmlFile) {
+  const browsers = installedBrowsers();
+  if (browsers.length === 0) {
+    return { path: null, error: '本机没有 Chrome/Edge，无法自动截图；请打开 HTML 看画面' };
+  }
+
+  const out = htmlFile.replace(/\.html?$/i, '') + '.png';
+  let lastError = '截图失败';
+  for (const browser of browsers) {
+    try { fs.unlinkSync(out); } catch { /* 没有旧文件 */ }
+    const attempt = screenshotWith(browser, htmlFile, out);
+    if (attempt.path) return attempt;
+    lastError = attempt.error;
+  }
+  return { path: null, error: `截图失败：${lastError}` };
 }
 
 function main() {

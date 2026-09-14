@@ -15,7 +15,7 @@
 
 ### Fixed
 
-- Linux CI 里 headless Chrome 截图补 `--no-sandbox`，避免 zygote Broken pipe
+- Linux CI 跳过依赖本机浏览器的截图测试；无图形环境里 Edge 会超时挂死
 
 ## [0.1.5] - 2026-09-15
 

@@ -43,7 +43,7 @@ test('鹈鹕探针用的是固定原句', () => {
   assert.equal(PELICAN_PROMPT, '创建一个 HTML，内容是 SVG 绘制一个鹈鹕骑自行车的 2D 动画');
 });
 
-test('本机有 Chrome/Edge 时能给本地 HTML 截图', { skip: !findBrowser() }, () => {
+test('本机有 Chrome/Edge 时能给本地 HTML 截图', { skip: !findBrowser() || Boolean(process.env.CI) }, () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdg-shot-'));
   const html = path.join(dir, 'page.html');
   fs.writeFileSync(html, '<html><body><h1>pelican</h1></body></html>');
