@@ -1,0 +1,29 @@
+{
+  "name": "model-degradation-guard",
+  "version": "0.1.5",
+  "private": true,
+  "description": "Codex 插件：写删前检查本轮是否被路由到弱模型，命中后暂停并询问。",
+  "author": "HUTAO667",
+  "license": "MIT",
+  "homepage": "https://github.com/Awfp1314/codex-degrade-guard",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Awfp1314/codex-degrade-guard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Awfp1314/codex-degrade-guard/issues"
+  },
+  "keywords": [
+    "codex",
+    "codex-plugin",
+    "hooks",
+    "guardrail",
+    "model-degradation"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.cjs\""
+  }
+}

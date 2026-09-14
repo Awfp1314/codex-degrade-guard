@@ -1,0 +1,33 @@
+{
+  "name": "model-degradation-guard",
+  "version": "0.1.5",
+  "description": "写删前检查本轮是否被路由到弱模型；命中后暂停并询问用户。",
+  "author": {
+    "name": "HUTAO667",
+    "url": "https://github.com/Awfp1314"
+  },
+  "homepage": "https://github.com/Awfp1314/codex-degrade-guard",
+  "repository": "https://github.com/Awfp1314/codex-degrade-guard",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "codex-plugin",
+    "hooks",
+    "guardrail",
+    "model-degradation"
+  ],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Model Degradation Guard",
+    "shortDescription": "写删前先自检，被换模就暂停询问。",
+    "longDescription": "在第一次写/删文件前，要求模型在本轮捎带一行短自检。本地打分判定是否被路由到弱模型：高置信时暂停写/删并询问用户，用户确认后本会话放行，会话结束时提醒人工检查代码。另含鹈鹕/糖果手动体检技能。",
+    "developerName": "HUTAO667",
+    "category": "Productivity",
+    "capabilities": [
+      "Local",
+      "Guardrail"
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "model-degradation-guard",
+  "interface": { "displayName": "Model Degradation Guard" },
+  "plugins": [
+    {
+      "name": "model-degradation-guard",
+      "source": { "source": "local", "path": "." },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

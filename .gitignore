@@ -1,0 +1,16 @@
+# macOS / Windows 噪音
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node
+node_modules/
+npm-debug.log*
+
+# 探针/本地调试产物
+mdg-pelican-*/
+mdg-*/
+*.tmp
+
+# 本地状态兜底（插件实际写在 $CODEX_HOME/model-degradation-guard/）
+.model-degradation-guard/

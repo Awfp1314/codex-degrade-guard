@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "model_degradation_guard": {
+      "command": "node",
+      "args": [
+        "scripts/mcp-server.cjs"
+      ],
+      "cwd": "./",
+      "enabled": true,
+      "startup_timeout_sec": 20,
+      "tool_timeout_sec": 1200
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "description": "写/删前要求本轮打卡 DEGRADE_CHECK；命中弱模型路由则暂停并询问用户。",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/guard.cjs\"",
+            "commandWindows": "if ($env:PLUGIN_ROOT) { $pluginRoot = $env:PLUGIN_ROOT } else { $pluginRoot = $env:CLAUDE_PLUGIN_ROOT }; & node \"$pluginRoot\\hooks\\guard.cjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/guard.cjs\"",
+            "commandWindows": "if ($env:PLUGIN_ROOT) { $pluginRoot = $env:PLUGIN_ROOT } else { $pluginRoot = $env:CLAUDE_PLUGIN_ROOT }; & node \"$pluginRoot\\hooks\\guard.cjs\"",
+            "timeout": 5,
+            "statusMessage": "检查本轮是否被路由到弱模型"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/guard.cjs\"",
+            "commandWindows": "if ($env:PLUGIN_ROOT) { $pluginRoot = $env:PLUGIN_ROOT } else { $pluginRoot = $env:CLAUDE_PLUGIN_ROOT }; & node \"$pluginRoot\\hooks\\guard.cjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
