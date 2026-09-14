@@ -62,7 +62,7 @@ test('UPDATE_CHECK=0 时不检查也不通知', () => {
   process.env.MODEL_DEGRADATION_GUARD_UPDATE_CHECK = '0';
   try {
     assert.equal(update.isEnabled(), false);
-    assert.equal(update.maybeKickCheck(Date.now(), () => { throw new Error('should not spawn'); }), false);
+    assert.equal(update.ensureFresh(Date.now(), () => { throw new Error('should not spawn'); }), false);
     assert.equal(update.takePromptNotice(Date.now()), '');
   } finally {
     delete process.env.MODEL_DEGRADATION_GUARD_UPDATE_CHECK;
@@ -172,7 +172,7 @@ test('检查间隔内不重复拉起进程', () => {
     lastNotifiedAt: 0,
     lastStopRemindedVersion: null
   });
-  const kicked = update.maybeKickCheck(now + 1000, () => {
+  const kicked = update.ensureFresh(now + 1000, () => {
     throw new Error('should not spawn');
   });
   assert.equal(kicked, false);

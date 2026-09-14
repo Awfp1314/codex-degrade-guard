@@ -135,7 +135,7 @@ function handleUserPromptSubmit(input, now) {
     // 清理失败不影响判定。
   }
   try {
-    update.maybeKickCheck(now);
+    update.ensureFresh(now);
   } catch {
     // 后台查版本失败不影响自检。
   }

@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.10] - 2026-09-15
+
+### Fixed
+
+- 版本检查改为会话开头同步查询（最多约 3 秒），避免第一句话时后台还没查完、以及当天缓存卡住旧版本号
+
 ## [0.1.9] - 2026-09-15
 
 ### Changed
