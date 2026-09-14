@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.11] - 2026-09-15
+
+### Changed
+
+- 鹈鹕体检收紧画质口径：贴纸/简笔画即使骑在车上也判疑似降智，不再把「在车上 + 有天空」当成未见降智
+
 ## [0.1.10] - 2026-09-15
 
 ### Fixed

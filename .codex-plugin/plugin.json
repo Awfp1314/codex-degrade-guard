@@ -1,6 +1,6 @@
 {
   "name": "model-degradation-guard",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "写删前检查本轮是否被路由到弱模型；命中后暂停并询问用户。",
   "author": {
     "name": "HUTAO667",

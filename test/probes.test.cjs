@@ -191,7 +191,7 @@ test('MCP 摘要带结论与关键数据', () => {
     screenshot: '/tmp/a.png',
     elapsedMs: 12345
   });
-  assert.match(pelican, /请看画面/);
+  assert.match(pelican, /请看画质|请看画面/);
   assert.match(pelican, /\/tmp\/a\.png/);
   assert.match(pelican, /\/tmp\/a\.html/);
   assert.doesNotMatch(pelican, /鹈鹕骑车测试：疑似降智/);

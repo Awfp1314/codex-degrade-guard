@@ -32,7 +32,7 @@ const TOOLS = [
   },
   {
     name: 'pelican_probe',
-    description: '手动体检：用固定原句生成鹈鹕骑自行车动画并截图。不要用返回的关键词当下结论；必须看截图/HTML 画面再判断（不参与写前闸门）。未见降智通常约 8 分钟。',
+    description: '手动体检：生成鹈鹕骑自行车动画并截图。必须看画质：完整插画才算未见降智；贴纸/简笔画即使骑在车上也是疑似降智。不要用关键词下结论。未见降智通常约 8 分钟。',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -137,7 +137,7 @@ function pelicanSummary(data) {
   if (data.keywordHints && data.keywordHints.length) {
     lines.push(`关键词旁证（不作结论）：${data.keywordHints.join('；')}`);
   }
-  lines.push('判定标准：鹈鹕骑在车上且构图完整 → 未见降智；人和车分离或简笔画 → 疑似降智。');
+  lines.push('判定标准：完整插画（设计、细节、脚踏对得上）→ 未见降智。贴纸/简笔画即使骑在车上、或人车分离 → 疑似降智。拿不准判降智。');
   return lines.join('\n');
 }
 
