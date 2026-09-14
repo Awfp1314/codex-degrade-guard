@@ -13,6 +13,10 @@
 
 - 生成后尝试用本机 Chrome/Edge 截图，方便当前会话看图判定
 
+### Fixed
+
+- Linux CI 里 headless Chrome 截图补 `--no-sandbox`，避免 zygote Broken pipe
+
 ## [0.1.5] - 2026-09-15
 
 ### Added

@@ -136,6 +136,8 @@ function screenshotHtml(htmlFile) {
     '--disable-gpu',
     '--hide-scrollbars',
     '--no-first-run',
+    '--no-sandbox',
+    '--disable-dev-shm-usage',
     '--window-size=1280,800',
     `--screenshot=${out}`,
     pathToFileURL(htmlFile).href
