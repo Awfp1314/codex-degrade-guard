@@ -1,8 +1,27 @@
+<div align="center">
+
+<img src="assets/logo.svg" width="128" height="128" alt="Model Degradation Guard">
+
 # Model Degradation Guard
 
-Codex 插件：在模型**偷偷换成弱模型**之前拦住写/删，避免一晚上的代码被改坏。
+**写/删前拦住偷偷换弱模型，避免项目被改坏。**
 
 读、搜不打扰。第一次要改文件时先本地自检；高置信命中就暂停问你，确认后本会话放行，结束时提醒人工检查。另外带鹈鹕 / 糖果两套手动体检。
+
+[![CI](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml)
+[![Version](https://img.shields.io/badge/version-0.1.5-0B1220?style=flat-square)](CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg?style=flat-square)](package.json)
+[![Codex Plugin](https://img.shields.io/badge/Codex-plugin-111827?style=flat-square)](https://developers.openai.com/codex/plugins)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/Awfp1314/codex-degrade-guard/issues)
+
+[![GitHub stars](https://img.shields.io/github/stars/Awfp1314/codex-degrade-guard?style=social)](https://github.com/Awfp1314/codex-degrade-guard/stargazers)
+[![X @HUTAO667](https://img.shields.io/badge/X-@HUTAO667-000000?logo=x&logoColor=white)](https://x.com/HUTAO667)
+[![Follow on X](https://img.shields.io/twitter/follow/HUTAO667?style=social&label=Follow%20%40HUTAO667)](https://x.com/HUTAO667)
+
+[安装](#安装) · [效果](#实际效果) · [体检](#手动体检) · [贡献](#欢迎贡献) · [X](https://x.com/HUTAO667)
+
+</div>
 
 ## 为什么做这个
 
@@ -21,6 +40,16 @@ Codex 插件：在模型**偷偷换成弱模型**之前拦住写/删，避免一
 所以做了这个插件：写/删发生之前先打卡，命中弱模型路由就停手。
 
 判定口径来自社区公开观察，是启发式，不是鉴定。出处见 [`docs/background.md`](docs/background.md)。
+
+## 功能
+
+| 能力 | 说明 |
+|---|---|
+| **写前闸门** | 高置信命中弱模型路由时，暂停写/删并询问 |
+| **不打扰阅读** | 读、搜直接放行，不插入体检题 |
+| **手动体检** | `$pelican-test` / `$candy-test`，空会话对照正常号和降智号 |
+| **本地判定** | 打分在本机完成，不上传代码，不发网络请求 |
+| **结束提醒** | 降智会话里真写过东西，才提醒不要直接提交 |
 
 ## 实际效果
 
@@ -221,4 +250,14 @@ test/
 
 ## 许可
 
-MIT © HUTAO667
+MIT © [HUTAO667](https://x.com/HUTAO667)
+
+---
+
+<div align="center">
+
+[GitHub](https://github.com/Awfp1314/codex-degrade-guard) · [Issues](https://github.com/Awfp1314/codex-degrade-guard/issues) · [X @HUTAO667](https://x.com/HUTAO667)
+
+如果这个插件帮你拦住过一次偷偷换模，欢迎点 Star，也欢迎把新的检测规则开过来。
+
+</div>
