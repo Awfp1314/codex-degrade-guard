@@ -18,6 +18,7 @@ const score = require('../lib/score.cjs');
 const state = require('../lib/state.cjs');
 const transcript = require('../lib/transcript.cjs');
 const tools = require('../lib/tools.cjs');
+const update = require('../lib/update.cjs');
 
 const SUBMIT_TOOL = 'model_degradation_guard.submit_check';
 const CHECK_FIELDS = 'token=<本轮 token> / tibo=<一句话> / cutoff=<YYYY-MM 或 refuse> / juice=<数字或 none>';
@@ -133,6 +134,11 @@ function handleUserPromptSubmit(input, now) {
   } catch {
     // 清理失败不影响判定。
   }
+  try {
+    update.maybeKickCheck(now);
+  } catch {
+    // 后台查版本失败不影响自检。
+  }
   const current = state.readState(sessionId, now);
   const token = crypto.randomBytes(12).toString('base64url');
   state.startCheck(current, { turnId: input.turn_id, token }, now);
@@ -153,11 +159,18 @@ function handleUserPromptSubmit(input, now) {
   const prefix = current.status === 'degraded_approved'
     ? `${APPROVED_NOTE} `
     : (current.status === 'degraded' ? `${PAUSED_NOTE} ` : '');
+  let notice = '';
+  try {
+    notice = update.takePromptNotice(now);
+  } catch {
+    notice = '';
+  }
+  const extra = notice ? `${notice} ` : '';
 
   return {
     hookSpecificOutput: {
       hookEventName: 'UserPromptSubmit',
-      additionalContext: `${prefix}${buildInstructions(token)}`
+      additionalContext: `${extra}${prefix}${buildInstructions(token)}`
     }
   };
 }
@@ -271,26 +284,34 @@ function handlePreToolUse(input, now) {
 
 function handleStop(input, now) {
   const current = state.readState(input.session_id, now);
-  if (!current.usedDegraded) return null;
+  const stopHookActive = input.stop_hook_active === true;
 
-  const since = current.firstDegradedAt
-    ? `（首次命中：${new Date(current.firstDegradedAt).toLocaleString()}）`
-    : '';
-  const warning = `${STOP_WARNING}${since}`;
+  if (current.usedDegraded) {
+    const since = current.firstDegradedAt
+      ? `（首次命中：${new Date(current.firstDegradedAt).toLocaleString()}）`
+      : '';
+    const warning = `${STOP_WARNING}${since}`;
 
-  // systemMessage 在 Codex app/CLI 里都不会显示给用户（实测），能看见的只有模型自己说的话，
-  // 所以提醒走 Stop block + reason 让模型转达；频率：首次 + 每 N 个降智写入回合（默认 5），
-  // 外加 30 分钟兜底，并用 stop_hook_active 与 warnedAt 防环。
-  if (!shouldWarnAtStop(current, now, input.stop_hook_active === true)) {
+    // systemMessage 在 Codex app/CLI 里都不会显示给用户（实测），能看见的只有模型自己说的话，
+    // 所以提醒走 Stop block + reason 让模型转达；频率：首次 + 每 N 个降智写入回合（默认 5），
+    // 外加 30 分钟兜底，并用 stop_hook_active 与 warnedAt 防环。
+    if (shouldWarnAtStop(current, now, stopHookActive)) {
+      current.warnedAt = now;
+      current.warnedWriteTurns = Number.isInteger(current.degradedWriteTurns) ? current.degradedWriteTurns : 0;
+      state.writeState(current, now);
+      return { decision: 'block', reason: `${STOP_RELAY}${warning}` };
+    }
     const turns = Number.isInteger(current.degradedWriteTurns) ? current.degradedWriteTurns : 0;
-    if (turns === 0) return null;
-    return { systemMessage: warning };
+    if (turns > 0) return { systemMessage: warning };
   }
 
-  current.warnedAt = now;
-  current.warnedWriteTurns = Number.isInteger(current.degradedWriteTurns) ? current.degradedWriteTurns : 0;
-  state.writeState(current, now);
-  return { decision: 'block', reason: `${STOP_RELAY}${warning}` };
+  try {
+    const notice = update.takeStopNotice(now, stopHookActive);
+    if (notice) return { decision: 'block', reason: notice };
+  } catch {
+    // 更新提醒失败不影响结束。
+  }
+  return null;
 }
 
 function handleHook(input, now = Date.now()) {

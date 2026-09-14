@@ -7,7 +7,7 @@
 写/删前拦住偷偷换弱模型
 
 [![CI](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.1.7-0B1220?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.8-0B1220?style=flat-square)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg?style=flat-square)](package.json)
 [![Codex Plugin](https://img.shields.io/badge/Codex-plugin-111827?style=flat-square)](https://developers.openai.com/codex/plugins)
@@ -123,6 +123,15 @@ codex plugin add model-degradation-guard@model-degradation-guard
 
 改完仓库要重新安装才生效。重装**同一版本号**时，若还有 Codex 会话在跑，它拉起的 MCP 进程会占着 `~/.codex/plugins/cache/.../<version>/`，安装会报 `拒绝访问`。把 `version` 加一位再装更稳妥。
 
+### 更新
+
+```bash
+codex plugin marketplace upgrade model-degradation-guard
+codex plugin add model-degradation-guard@model-degradation-guard
+```
+
+然后**新开对话**，并重新信任钩子。装过带通知的版本之后，仓库有新版本时对话里会说一句（每个版本一次；几天没更新会再补一句）。不自动安装。设 `MODEL_DEGRADATION_GUARD_UPDATE_CHECK=0` 可关掉检查。已经装了更早版本、钩子里还没有这段逻辑的，只能按上面两条命令手动升一次。
+
 ## 手动体检
 
 写前闸门是自动的。想主动看当前号正不正常，在对话里说：
@@ -223,9 +232,10 @@ npm test
 
 ## 隐私与副作用
 
-- **读取**：当前会话 rollout transcript，只取本轮 assistant 文本与工具调用。全部本地解析，**不发起网络请求**。
-- **写入**：`$CODEX_HOME/model-degradation-guard/<session_id>.json`（7 天后清理）。
-- **注入**：每轮向模型上下文追加一段自检要求（含一次性 token）。
+- **读取**：当前会话 rollout transcript，只取本轮 assistant 文本与工具调用。打分全部本地解析。
+- **联网**：默认每天最多一次访问 GitHub 上的 `plugin.json` 看有没有新版本。失败则静默。不自动安装。`MODEL_DEGRADATION_GUARD_UPDATE_CHECK=0` 可关。
+- **写入**：`$CODEX_HOME/model-degradation-guard/<session_id>.json`（7 天后清理），以及同目录 `update.json`。
+- **注入**：每轮向模型上下文追加一段自检要求（含一次性 token）；有新版本时另加一句请模型转述。
 - **拦截**：会对写/删工具返回 `deny`；回复「继续」后本会话不再拦截。
 - **关闭**：设置 → 钩子里逐个关，或设 `MODEL_DEGRADATION_GUARD_DISABLE=1`。
 
@@ -243,13 +253,14 @@ npm test
 hooks/guard.cjs             # 注入、闸门、结束提醒
 lib/score.cjs               # 本地打分（预期答案只在这里）
 lib/state.cjs               # 会话状态机
+lib/update.cjs              # 限频查版本，只通知不安装
 probes/                     # 鹈鹕 / 糖果
 scripts/mcp-server.cjs
 skills/                     # pelican-test / candy-test
 test/
 ```
 
-环境变量：`MODEL_DEGRADATION_GUARD_STATE_DIR`、`MODEL_DEGRADATION_GUARD_DISABLE`、`MODEL_DEGRADATION_GUARD_CODEX_BIN`、`MODEL_DEGRADATION_GUARD_PROBE_TIMEOUT_MS`、`MODEL_DEGRADATION_GUARD_PELICAN_TIMEOUT_MS`（默认 12 分钟）、`MODEL_DEGRADATION_GUARD_WARN_EVERY_TURNS`、`MODEL_DEGRADATION_GUARD_WARN_MIN_INTERVAL_MS`、`MODEL_DEGRADATION_GUARD_RUN_TIMEOUT_MS`。状态目录跟随 `CODEX_HOME`（默认 `~/.codex`）。
+环境变量：`MODEL_DEGRADATION_GUARD_STATE_DIR`、`MODEL_DEGRADATION_GUARD_DISABLE`、`MODEL_DEGRADATION_GUARD_UPDATE_CHECK`（`0` 关掉版本检查）、`MODEL_DEGRADATION_GUARD_CODEX_BIN`、`MODEL_DEGRADATION_GUARD_PROBE_TIMEOUT_MS`、`MODEL_DEGRADATION_GUARD_PELICAN_TIMEOUT_MS`（默认 12 分钟）、`MODEL_DEGRADATION_GUARD_WARN_EVERY_TURNS`、`MODEL_DEGRADATION_GUARD_WARN_MIN_INTERVAL_MS`、`MODEL_DEGRADATION_GUARD_RUN_TIMEOUT_MS`。状态目录跟随 `CODEX_HOME`（默认 `~/.codex`）。
 
 `.mcp.json` 的 `cwd` 必须写 `./`。`${PLUGIN_ROOT}` 在这里不会被展开。
 

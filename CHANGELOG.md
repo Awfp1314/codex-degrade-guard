@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.8] - 2026-09-15
+
+### Added
+
+- 版本通知：每天最多查一次 GitHub 上的 `plugin.json`。有新版本时会话开头让模型转述一句更新命令，每个版本一次；几天未更新则在 Stop 再补一句。不自动安装。`MODEL_DEGRADATION_GUARD_UPDATE_CHECK=0` 可关。
+
 ## [0.1.7] - 2026-09-15
 
 ### Changed

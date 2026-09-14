@@ -9,6 +9,7 @@ const path = require('node:path');
 const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdg-guard-test-'));
 const transcriptDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdg-guard-transcript-'));
 process.env.MODEL_DEGRADATION_GUARD_STATE_DIR = stateDir;
+process.env.MODEL_DEGRADATION_GUARD_UPDATE_CHECK = '0';
 
 const state = require('../lib/state.cjs');
 const guard = require('../hooks/guard.cjs');

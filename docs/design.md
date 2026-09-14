@@ -19,6 +19,7 @@ hooks/guard.cjs
 lib/score.cjs
 lib/parse.cjs
 lib/state.cjs
+lib/update.cjs              # 限频查版本，只通知
 probes/pelican.cjs
 probes/candy.cjs
 skills/pelican-test/SKILL.md
