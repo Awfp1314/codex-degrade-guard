@@ -4,7 +4,7 @@
 // 手动体检：糖果题 5 次。
 //
 // 正确答案 21（回答里出现独立的 21 即算对）。
-// 判定（docs/mvp.md）：≥3/5 且无 516 截断为正常；0/5 或多次 516 为能力截断。
+// 判定：跑满 5 次后，正确少于 3 次 → 疑似降智；≥3 次 → 未见降智。
 // 不替代写前换模检查。
 
 const probe = require('./lib.cjs');
@@ -95,19 +95,16 @@ async function runAll(count, options = {}) {
   return results;
 }
 
-// 口径按 docs/mvp.md：「≥3/5 且无 516 为正常；0/5 或多次 516 为能力截断」。
-// 少于 5 次时不硬套 0/5，避免单次失手就被判成截断。
+// 正确 ≥3 次 → 未见降智；跑满 5 次且正确 <3 → 疑似降智。没跑满又不到 3 次正确，先不下结论。
 function summarize(results) {
   const graded = results.filter((row) => !row.failure);
   const correct = results.filter((row) => row.correct).length;
   const truncated = results.filter((row) => row.truncated).length;
-  const enoughRuns = graded.length >= 5;
 
   let verdict = 'inconclusive';
   if (graded.length === 0) verdict = 'inconclusive';
-  else if (truncated >= 2) verdict = 'degraded';
-  else if (enoughRuns && correct === 0) verdict = 'degraded';
-  else if (enoughRuns && correct >= 3 && truncated === 0) verdict = 'healthy';
+  else if (correct >= 3) verdict = 'healthy';
+  else if (graded.length >= 5) verdict = 'degraded';
   return { runs: results.length, graded: graded.length, correct, truncated, verdict };
 }
 
@@ -148,15 +145,16 @@ function main() {
       return 0;
     }
     const label = {
-      healthy: '正常（能力未见截断）',
-      degraded: '疑似能力截断',
-      inconclusive: '结果不足，无法判断'
+      healthy: '未见降智（正确 ≥ 3 次）',
+      degraded: '疑似降智（正确少于 3 次）',
+      inconclusive: '还没跑满 5 次，无法判断'
     }[summary.verdict];
     process.stdout.write([
       renderTable(results),
       '',
       `糖果题：${label}`,
-      `正确 ${summary.correct}/${summary.graded}，516 截断 ${summary.truncated} 次`,
+      `正确 ${summary.correct}/${summary.graded}（少于 3 次正确 → 疑似降智）`,
+      `516 截断 ${summary.truncated} 次（仅记录，不作结论）`,
       ...(results.some((row) => row.failure)
         ? [`失败原因：${results.filter((row) => row.failure).map((row) => `#${row.index} ${row.failure}`).join('；')}`]
         : [])

@@ -64,16 +64,17 @@ test('糖果判定：正确答案是独立的 21', () => {
   assert.equal(ANSWER_PATTERN.test('需要 210 个'), false);
 });
 
-test('糖果汇总：≥3/5 且无 516 为正常，0/5 或多次 516 为截断', () => {
+test('糖果汇总：正确少于 3 次就是降智', () => {
   const row = (index, correct, truncated) => ({
     index, correct, truncated, reasoningTokens: truncated ? 516 : 800,
     outputTokens: 100, elapsedMs: 1000, preview: '', failure: null
   });
   assert.equal(summarize([row(1, true), row(2, true), row(3, true), row(4, false), row(5, false)]).verdict, 'healthy');
+  assert.equal(summarize([row(1, true), row(2, true), row(3, false), row(4, false), row(5, false)]).verdict, 'degraded');
+  assert.equal(summarize([row(1, true), row(2, false), row(3, false), row(4, false), row(5, false)]).verdict, 'degraded');
   assert.equal(summarize([row(1, false), row(2, false), row(3, false), row(4, false), row(5, false)]).verdict, 'degraded');
-  assert.equal(summarize([row(1, false, true), row(2, false, true), row(3, false), row(4, false), row(5, false)]).verdict, 'degraded');
+  assert.equal(summarize([row(1, true), row(2, true), row(3, true)]).verdict, 'healthy');
   assert.equal(summarize([row(1, true), row(2, false), row(3, true)]).verdict, 'inconclusive');
-  // 少于 5 次时不按「0/5」定罪。
   assert.equal(summarize([row(1, false)]).verdict, 'inconclusive');
   assert.equal(summarize([row(1, false), row(2, false)]).verdict, 'inconclusive');
   const failed = summarize([{ index: 1, failure: 'boom' }]);
@@ -199,7 +200,7 @@ test('MCP 摘要带结论与关键数据', () => {
     summary: { verdict: 'healthy', correct: 4, graded: 5, truncated: 0 },
     results: [{ index: 1, correct: true, reasoningTokens: 700, preview: '答案是 21' }]
   });
-  assert.match(candy, /正常/);
+  assert.match(candy, /未见降智/);
   assert.match(candy, /正确 4\/5/);
 });
 

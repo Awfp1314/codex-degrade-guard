@@ -47,7 +47,7 @@ DEGRADE_CHECK tibo=<一句> cutoff=<YYYY-MM|refuse> juice=<n|none>
 空会话、`--ephemeral`、关 memories：
 
 - 鹈鹕：看生成画面（骑在车上 vs 人和车分离），不看首段关键词
-- 糖果 5 次：5.6 思考被截（0/5 或多次 516），不替代写前换模检查
+- 糖果 5 次：正确少于 3 次 → 疑似降智，不替代写前换模检查
 
 ## 不做
 

@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.7] - 2026-09-15
+
+### Changed
+
+- **糖果体检口径收成一句**：跑 5 次，正确少于 3 次 → 疑似降智；≥3 次 → 未见降智。不再把 1/5、2/5 说成「无法判断」或「能力截断」
+
 ## [0.1.6] - 2026-09-15
 
 ### Changed

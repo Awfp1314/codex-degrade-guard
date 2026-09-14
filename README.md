@@ -7,7 +7,7 @@
 写/删前拦住偷偷换弱模型
 
 [![CI](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.1.6-0B1220?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.7-0B1220?style=flat-square)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg?style=flat-square)](package.json)
 [![Codex Plugin](https://img.shields.io/badge/Codex-plugin-111827?style=flat-square)](https://developers.openai.com/codex/plugins)
@@ -130,7 +130,7 @@ codex plugin add model-degradation-guard@model-degradation-guard
 | 技能 | 测什么 | 怎么看 |
 |------|--------|--------|
 | `$pelican-test` | 固定原句「鹈鹕骑自行车」，约 8 分钟 | **看画面**：骑在车上、构图完整 → 未见降智；人和车分离、简笔画 → 疑似降智。关键词不作结论 |
-| `$candy-test` | 同一道排列组合题跑 5 次 | ≥3/5 且无 516 截断 → 正常；0/5 或多次 516 → 能力截断 |
+| `$candy-test` | 同一道排列组合题跑 5 次 | **正确 ≥ 3 次 → 未见降智；少于 3 次 → 疑似降智** |
 
 两个技能都会**另起空会话、消耗真实额度**（糖果 5 次 = 5 个空会话）。结果只是参考，不能单独当作「必须停手」的鉴定。
 
@@ -142,7 +142,7 @@ codex plugin add model-degradation-guard@model-degradation-guard
 
 **糖果：正常号 vs 降智号**
 
-| 5/5 正确，无 516 截断 | 0/5，出现 516 截断 |
+| 5/5 正确（≥3 即未见降智） | 0/5 正确（少于 3 次即疑似降智） |
 |---|---|
 | ![正常号糖果测试](docs/screenshots/candy-healthy.png) | ![降智号糖果测试](docs/screenshots/candy-degraded.png) |
 

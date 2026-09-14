@@ -44,7 +44,7 @@ const TOOLS = [
   },
   {
     name: 'candy_probe',
-    description: '手动体检：跑 1~5 次糖果数学题，统计正确率与推理 token 截断，判断能力是否被截断。',
+    description: '手动体检：默认跑 5 次糖果数学题。正确 ≥3 次为未见降智，少于 3 次为疑似降智。不要说成无法判断或能力截断。',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -144,9 +144,9 @@ function pelicanSummary(data) {
 function candySummary(data) {
   const summary = data.summary || {};
   const label = {
-    healthy: '正常（能力未见截断）',
-    degraded: '疑似能力截断',
-    inconclusive: '结果不足，无法判断'
+    healthy: '未见降智（正确 ≥ 3 次）',
+    degraded: '疑似降智（正确少于 3 次）',
+    inconclusive: '还没跑满 5 次，无法判断'
   }[summary.verdict] || summary.verdict;
   const rows = (data.results || []).map((row) => [
     `#${row.index}`,
@@ -156,7 +156,8 @@ function candySummary(data) {
   ].join(' '));
   return [
     `糖果题：${label}`,
-    `正确 ${summary.correct}/${summary.graded}，516 截断 ${summary.truncated} 次`,
+    `正确 ${summary.correct}/${summary.graded}（少于 3 次正确 → 疑似降智）`,
+    `516 截断 ${summary.truncated} 次（仅记录，不作结论）`,
     ...rows
   ].join('\n');
 }
