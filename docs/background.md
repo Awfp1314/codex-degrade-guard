@@ -46,7 +46,7 @@
 
 ## 4. 本仓库自己实测到的平台事实
 
-这些不是社区说法，是在 Codex 上跑出来的可复现结论，写在 `README.md` 的「实现取舍」里：
+这些不是社区说法，是在 Codex 上跑出来的可复现结论，README「开发备忘」和 `docs/design.md` 里有展开：
 
 - `permissionDecision: ask` 在 `bypassPermissions` 下被忽略，闸门必须用 `deny`；
 - 钩子的 `systemMessage` 不会显示给用户，只能靠模型转述；
