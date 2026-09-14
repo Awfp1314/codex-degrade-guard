@@ -46,7 +46,7 @@ DEGRADE_CHECK tibo=<一句> cutoff=<YYYY-MM|refuse> juice=<n|none>
 
 空会话、`--ephemeral`、关 memories：
 
-- 鹈鹕：看画质（完整插画 vs 贴纸/人车分离），不看首段关键词
+- 鹈鹕：参考图 vs 本次画面，用户自己比对
 - 糖果 5 次：正确少于 3 次 → 疑似降智，不替代写前换模检查
 
 ## 不做

@@ -6,9 +6,7 @@
 // 固定原句，不能添油加醋：
 //   创建一个 HTML，内容是 SVG 绘制一个鹈鹕骑自行车的 2D 动画
 //
-// 判定看画面，不看首段关键词：
-//   未见降智：完整插画（设计、细节、脚踏对得上），大约 8 分钟
-//   疑似降智：人车分离，或贴纸/简笔画（即使骑在车上）
+// 不由模型判定：把未见降智参考图和本次截图一起交给用户自己比对。
 //
 // 这是账号体检，不参与写前闸门。
 
@@ -22,6 +20,8 @@ const PROMPT = '创建一个 HTML，内容是 SVG 绘制一个鹈鹕骑自行车
 const DEFAULT_MODEL = 'gpt-6-astra';
 const DEFAULT_REASONING_EFFORT = 'medium';
 const DEFAULT_PELICAN_TIMEOUT_MS = Number(process.env.MODEL_DEGRADATION_GUARD_PELICAN_TIMEOUT_MS) || 12 * 60 * 1000;
+const REFERENCE_IMAGE = path.join(__dirname, '..', 'docs', 'screenshots', 'pelican-art-healthy.png');
+const REFERENCE_IMAGE_URL = 'https://raw.githubusercontent.com/Awfp1314/codex-degrade-guard/master/docs/screenshots/pelican-art-healthy.png';
 
 const SVG_KEYWORDS = /(内嵌\s*SVG|内联\s*SVG)/i;
 const LOOP_KEYWORDS = /循环/;
@@ -65,7 +65,7 @@ function statusFromRun({ htmlFiles, timedOut, failure }) {
   if (htmlFiles && htmlFiles.length > 0) {
     return {
       verdict: 'needs_visual',
-      reasons: ['请看画质：完整插画才算未见降智。贴纸/简笔画即使骑在车上也是疑似降智；人车分离同样是']
+      reasons: ['请把参考图和本次截图一起给用户看，由用户自己比对。不要替用户判定。']
     };
   }
   if (timedOut) {
@@ -217,6 +217,8 @@ function report(run, workspace, options) {
     htmlFiles: html,
     screenshot: shot.path,
     screenshotError: shot.error,
+    referenceImage: fs.existsSync(REFERENCE_IMAGE) ? REFERENCE_IMAGE : null,
+    referenceImageUrl: REFERENCE_IMAGE_URL,
     workspace,
     usage,
     exitCode: run.exitCode,
@@ -231,13 +233,14 @@ function report(run, workspace, options) {
   }
 
   const label = {
-    needs_visual: '已生成，请看画面判定',
+    needs_visual: '已生成，请把参考图和本次画面一起给用户比对',
     failed: '未能生成有效画面'
   }[status.verdict] || status.verdict;
   const lines = [
     `鹈鹕骑车测试：${label}`,
     `依据：${status.reasons.join('；')}`,
-    shot.path ? `截图：${shot.path}` : (shot.error ? `截图：${shot.error}` : '截图：无'),
+    `参考图：${fs.existsSync(REFERENCE_IMAGE) ? REFERENCE_IMAGE : REFERENCE_IMAGE_URL}`,
+    shot.path ? `本次截图：${shot.path}` : (shot.error ? `本次截图：${shot.error}` : '本次截图：无'),
     html.length ? `产出 HTML：${html.join(', ')}` : '产出：没有生成 HTML 文件',
     `模型：${options.model} / ${options.reasoningEffort}`,
     `用时：${(run.elapsedMs / 1000).toFixed(1)}s（未见降智通常约 8 分钟）`
@@ -259,6 +262,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+  REFERENCE_IMAGE,
+  REFERENCE_IMAGE_URL,
   DEFAULT_MODEL,
   DEFAULT_PELICAN_TIMEOUT_MS,
   DEFAULT_REASONING_EFFORT,

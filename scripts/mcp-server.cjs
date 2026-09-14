@@ -32,7 +32,7 @@ const TOOLS = [
   },
   {
     name: 'pelican_probe',
-    description: '手动体检：生成鹈鹕骑自行车动画并截图。默认模型 gpt-6-astra、思考强度 medium，不要改成当前对话的模型，除非用户明确指定。必须看画质：完整插画才算未见降智；贴纸/简笔画即使骑在车上也是疑似降智。',
+    description: '手动体检：生成鹈鹕骑自行车动画并截图。默认 gpt-6-astra / medium。返回后必须把 referenceImage 和本次截图一起展示给用户自己比对，禁止输出「判定：未见降智/疑似降智」。',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -124,21 +124,19 @@ function runProbe(name, args) {
 
 function pelicanSummary(data) {
   const label = {
-    needs_visual: '已生成，请看画面判定（不要用关键词下结论）',
+    needs_visual: '已生成。把参考图和本次截图一起给用户看，不要自己判定',
     failed: '未能生成有效画面'
   }[data.verdict] || data.verdict;
   const lines = [
     `鹈鹕骑车测试：${label}`,
     `依据：${(data.reasons || []).join('；')}`,
-    data.screenshot ? `截图：${data.screenshot}` : (data.screenshotError ? `截图：${data.screenshotError}` : '截图：无'),
+    data.referenceImage ? `参考图（未见降智）：${data.referenceImage}` : (data.referenceImageUrl ? `参考图（未见降智）：${data.referenceImageUrl}` : '参考图：无'),
+    data.screenshot ? `本次截图：${data.screenshot}` : (data.screenshotError ? `本次截图：${data.screenshotError}` : '本次截图：无'),
     data.htmlFiles && data.htmlFiles.length ? `产出 HTML：${data.htmlFiles.join(', ')}` : '产出：没有生成 HTML 文件',
     `模型：${data.model || 'gpt-6-astra'} / ${data.reasoningEffort || 'medium'}`,
     `用时：${(data.elapsedMs / 1000).toFixed(1)}s（未见降智通常约 8 分钟）`
   ];
-  if (data.keywordHints && data.keywordHints.length) {
-    lines.push(`关键词旁证（不作结论）：${data.keywordHints.join('；')}`);
-  }
-  lines.push('判定标准：完整插画（设计、细节、脚踏对得上）→ 未见降智。贴纸/简笔画即使骑在车上、或人车分离 → 疑似降智。拿不准判降智。');
+  lines.push('必须用 Markdown 连续贴出参考图和本次截图。然后只说：请自己对比两张图。差很多就是降智。我不再替你判定。禁止输出「判定：未见降智」或「判定：疑似降智」。');
   return lines.join('\n');
 }
 

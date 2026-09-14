@@ -200,13 +200,16 @@ test('MCP 摘要带结论与关键数据', () => {
     reasons: ['请看画面'],
     htmlFiles: ['/tmp/a.html'],
     screenshot: '/tmp/a.png',
+    referenceImage: '/tmp/ref.png',
     elapsedMs: 12345,
     model: 'gpt-6-astra',
     reasoningEffort: 'medium'
   });
-  assert.match(pelican, /请看画质|请看画面/);
+  assert.match(pelican, /参考图/);
+  assert.match(pelican, /\/tmp\/ref\.png/);
   assert.match(pelican, /\/tmp\/a\.png/);
   assert.match(pelican, /\/tmp\/a\.html/);
+  assert.match(pelican, /我不再替你判定/);
   assert.doesNotMatch(pelican, /鹈鹕骑车测试：疑似降智/);
 
   const candy = candySummary({

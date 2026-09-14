@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.13] - 2026-09-15
+
+### Changed
+
+- 鹈鹕体检不再让模型判定：把仓库里的未见降智参考图和本次画面一起展示，由用户自己比对
+
 ## [0.1.12] - 2026-09-15
 
 ### Changed
