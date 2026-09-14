@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.12] - 2026-09-15
+
+### Changed
+
+- 鹈鹕体检默认固定为 **gpt-6-astra / medium**，不再跟随当前对话里选的模型
+
 ## [0.1.11] - 2026-09-15
 
 ### Changed

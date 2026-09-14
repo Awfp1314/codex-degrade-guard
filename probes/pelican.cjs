@@ -19,6 +19,8 @@ const { pathToFileURL } = require('node:url');
 const probe = require('./lib.cjs');
 
 const PROMPT = '创建一个 HTML，内容是 SVG 绘制一个鹈鹕骑自行车的 2D 动画';
+const DEFAULT_MODEL = 'gpt-6-astra';
+const DEFAULT_REASONING_EFFORT = 'medium';
 const DEFAULT_PELICAN_TIMEOUT_MS = Number(process.env.MODEL_DEGRADATION_GUARD_PELICAN_TIMEOUT_MS) || 12 * 60 * 1000;
 
 const SVG_KEYWORDS = /(内嵌\s*SVG|内联\s*SVG)/i;
@@ -26,7 +28,12 @@ const LOOP_KEYWORDS = /循环/;
 const HEALTHY_KEYWORDS = /(踩踏|沿途风景|背景移动)/;
 
 function parseArgs(argv) {
-  const options = { json: false, model: undefined, reasoningEffort: undefined, keep: false };
+  const options = {
+    json: false,
+    model: DEFAULT_MODEL,
+    reasoningEffort: DEFAULT_REASONING_EFFORT,
+    keep: false
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--json') options.json = true;
@@ -172,7 +179,7 @@ function screenshotHtml(htmlFile) {
 function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
-    process.stdout.write('用法: node probes/pelican.cjs [--json] [--model <name>] [-r <effort>] [--keep]\n');
+    process.stdout.write('用法: node probes/pelican.cjs [--json] [--model <name>] [-r <effort>] [--keep]\n默认模型 gpt-6-astra，思考强度 medium。\n');
     return;
   }
 
@@ -201,6 +208,8 @@ function report(run, workspace, options) {
   const result = {
     probe: 'pelican',
     prompt: PROMPT,
+    model: options.model,
+    reasoningEffort: options.reasoningEffort,
     verdict: status.verdict,
     reasons: status.reasons,
     keywordHints: hints,
@@ -230,6 +239,7 @@ function report(run, workspace, options) {
     `依据：${status.reasons.join('；')}`,
     shot.path ? `截图：${shot.path}` : (shot.error ? `截图：${shot.error}` : '截图：无'),
     html.length ? `产出 HTML：${html.join(', ')}` : '产出：没有生成 HTML 文件',
+    `模型：${options.model} / ${options.reasoningEffort}`,
     `用时：${(run.elapsedMs / 1000).toFixed(1)}s（未见降智通常约 8 分钟）`
   ];
   if (hints.length) lines.push(`关键词旁证（不作结论）：${hints.join('；')}`);
@@ -249,8 +259,11 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DEFAULT_MODEL,
   DEFAULT_PELICAN_TIMEOUT_MS,
+  DEFAULT_REASONING_EFFORT,
   PROMPT,
+  parseArgs,
   findBrowser,
   keywordHints,
   main,

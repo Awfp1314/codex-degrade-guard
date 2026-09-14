@@ -14,7 +14,7 @@ process.env.MODEL_DEGRADATION_GUARD_STATE_DIR = stateDir;
 const sessionState = require('../lib/state.cjs');
 
 const { agentMessages, buildExecArgs, runCodexExec, shouldRetryWithoutHooks } = require('../probes/lib.cjs');
-const { keywordHints, statusFromRun, findBrowser, screenshotHtml, DEFAULT_PELICAN_TIMEOUT_MS, PROMPT: PELICAN_PROMPT } = require('../probes/pelican.cjs');
+const { keywordHints, statusFromRun, findBrowser, screenshotHtml, parseArgs, DEFAULT_MODEL, DEFAULT_REASONING_EFFORT, DEFAULT_PELICAN_TIMEOUT_MS, PROMPT: PELICAN_PROMPT } = require('../probes/pelican.cjs');
 const { runAll, summarize, PROMPT: CANDY_PROMPT, ANSWER_PATTERN } = require('../probes/candy.cjs');
 const { candySummary, pelicanSummary } = require('../scripts/mcp-server.cjs');
 
@@ -41,6 +41,17 @@ test('鹈鹕单次超时默认 12 分钟', () => {
 
 test('鹈鹕探针用的是固定原句', () => {
   assert.equal(PELICAN_PROMPT, '创建一个 HTML，内容是 SVG 绘制一个鹈鹕骑自行车的 2D 动画');
+});
+
+test('鹈鹕默认 gpt-6-astra / medium，命令行可覆盖', () => {
+  assert.equal(DEFAULT_MODEL, 'gpt-6-astra');
+  assert.equal(DEFAULT_REASONING_EFFORT, 'medium');
+  const defaults = parseArgs([]);
+  assert.equal(defaults.model, 'gpt-6-astra');
+  assert.equal(defaults.reasoningEffort, 'medium');
+  const overridden = parseArgs(['--model', 'gpt-5.6-sol', '-r', 'high']);
+  assert.equal(overridden.model, 'gpt-5.6-sol');
+  assert.equal(overridden.reasoningEffort, 'high');
 });
 
 test('本机有 Chrome/Edge 时能给本地 HTML 截图', { skip: !findBrowser() || Boolean(process.env.CI) }, () => {
@@ -189,7 +200,9 @@ test('MCP 摘要带结论与关键数据', () => {
     reasons: ['请看画面'],
     htmlFiles: ['/tmp/a.html'],
     screenshot: '/tmp/a.png',
-    elapsedMs: 12345
+    elapsedMs: 12345,
+    model: 'gpt-6-astra',
+    reasoningEffort: 'medium'
   });
   assert.match(pelican, /请看画质|请看画面/);
   assert.match(pelican, /\/tmp\/a\.png/);

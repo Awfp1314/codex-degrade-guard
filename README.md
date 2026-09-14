@@ -7,7 +7,7 @@
 写/删前拦住偷偷换弱模型
 
 [![CI](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.1.11-0B1220?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.12-0B1220?style=flat-square)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg?style=flat-square)](package.json)
 [![Codex Plugin](https://img.shields.io/badge/Codex-plugin-111827?style=flat-square)](https://developers.openai.com/codex/plugins)
@@ -138,7 +138,7 @@ codex plugin add model-degradation-guard@model-degradation-guard
 
 | 技能 | 测什么 | 怎么看 |
 |------|--------|--------|
-| `$pelican-test` | 固定原句「鹈鹕骑自行车」，约 8 分钟 | **看画质**：完整插画 → 未见降智；贴纸/简笔画（即使骑在车上）或人车分离 → 疑似降智 |
+| `$pelican-test` | 固定原句「鹈鹕骑自行车」，默认 **gpt-6-astra / medium**，约 8 分钟 | **看画质**：完整插画 → 未见降智；贴纸/简笔画（即使骑在车上）或人车分离 → 疑似降智 |
 | `$candy-test` | 同一道排列组合题跑 5 次 | **正确 ≥ 3 次 → 未见降智；少于 3 次 → 疑似降智** |
 
 两个技能都会**另起空会话、消耗真实额度**（糖果 5 次 = 5 个空会话）。结果只是参考，不能单独当作「必须停手」的鉴定。

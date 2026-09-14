@@ -32,13 +32,13 @@ const TOOLS = [
   },
   {
     name: 'pelican_probe',
-    description: '手动体检：生成鹈鹕骑自行车动画并截图。必须看画质：完整插画才算未见降智；贴纸/简笔画即使骑在车上也是疑似降智。不要用关键词下结论。未见降智通常约 8 分钟。',
+    description: '手动体检：生成鹈鹕骑自行车动画并截图。默认模型 gpt-6-astra、思考强度 medium，不要改成当前对话的模型，除非用户明确指定。必须看画质：完整插画才算未见降智；贴纸/简笔画即使骑在车上也是疑似降智。',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
       properties: {
-        model: { type: 'string', description: '可选：codex 模型名，省略用本地默认。' },
-        reasoning_effort: { type: 'string', description: '可选：low/medium/high/xhigh。' }
+        model: { type: 'string', description: '可选：codex 模型名。省略则为 gpt-6-astra。' },
+        reasoning_effort: { type: 'string', description: '可选：low/medium/high/xhigh。省略则为 medium。' }
       }
     }
   },
@@ -132,6 +132,7 @@ function pelicanSummary(data) {
     `依据：${(data.reasons || []).join('；')}`,
     data.screenshot ? `截图：${data.screenshot}` : (data.screenshotError ? `截图：${data.screenshotError}` : '截图：无'),
     data.htmlFiles && data.htmlFiles.length ? `产出 HTML：${data.htmlFiles.join(', ')}` : '产出：没有生成 HTML 文件',
+    `模型：${data.model || 'gpt-6-astra'} / ${data.reasoningEffort || 'medium'}`,
     `用时：${(data.elapsedMs / 1000).toFixed(1)}s（未见降智通常约 8 分钟）`
   ];
   if (data.keywordHints && data.keywordHints.length) {

@@ -31,7 +31,7 @@ description: 手动账号体检：用固定原句生成「鹈鹕骑自行车」�
 ## 怎么做
 
 1. 先告诉用户：这次会另起空会话作画，未见降智大约 8 分钟，请等。
-2. 调用 MCP 工具 `model_degradation_guard.pelican_probe`（可选参数 `model`、`reasoning_effort`）。
+2. 调用 MCP 工具 `model_degradation_guard.pelican_probe`。默认就是 `gpt-6-astra` + `medium`，**不要改成当前对话里的模型**。只有用户明确要求换模型或思考强度时才传 `model` / `reasoning_effort`。
 3. 如果 MCP 不可用，直接运行：
 
 ```bash
