@@ -7,7 +7,7 @@
 写/删前拦住偷偷换弱模型
 
 [![CI](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/Awfp1314/codex-degrade-guard/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.1.8-0B1220?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.1.9-0B1220?style=flat-square)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg?style=flat-square)](package.json)
 [![Codex Plugin](https://img.shields.io/badge/Codex-plugin-111827?style=flat-square)](https://developers.openai.com/codex/plugins)
