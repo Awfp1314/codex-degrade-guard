@@ -35,7 +35,14 @@ test('版本比较：只有三段数字且远程更大才算新', () => {
 
 test('包版本与插件清单版本保持同步', () => {
   assert.equal(update.compareVersions(pluginManifest.version, packageManifest.version), 0);
-  assert.equal(update.isNewer(pluginManifest.version, '0.1.14'), true);
+  assert.equal(update.isNewer(pluginManifest.version, '0.1.15'), true);
+});
+
+test('更新提示强制出现在最终答复，不能只放在折叠过程里', () => {
+  const notice = update.promptNotice('0.1.15', '0.1.16');
+  assert.match(notice, /最终答复的第一段必须/);
+  assert.match(notice, /禁止只在 commentary、思考或进度消息里提醒/);
+  assert.match(notice, /最终答复也必须再写一次/);
 });
 
 test('本地未更新时每次都通知；没跑满提醒间隔不走 Stop', () => {
