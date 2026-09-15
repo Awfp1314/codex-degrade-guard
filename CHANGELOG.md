@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.17] - 2026-09-15
+
+### Fixed
+
+- 用户明确要求更新插件时，Agent 必须直接执行升级和重装命令，不再拒绝或只让用户手动运行
+
 ## [0.1.16] - 2026-09-15
 
 ### Fixed
