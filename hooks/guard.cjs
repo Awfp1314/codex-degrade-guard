@@ -125,7 +125,7 @@ function collectTurnText(input) {
   return { ok: true, text: parts.filter(Boolean).join('\n\n'), capacityError, records };
 }
 
-function handleUserPromptSubmit(input, now) {
+function handleUserPromptSubmit(input, now, ensureFreshImpl = update.ensureFresh) {
   const sessionId = input.session_id;
   const prompt = String(input.prompt || '');
   // 一次用户回合只清一次过期状态；PreToolUse 可能在单回合里触发很多次，不放那里。
@@ -135,13 +135,20 @@ function handleUserPromptSubmit(input, now) {
     // 清理失败不影响判定。
   }
   try {
-    update.ensureFresh(now);
+    ensureFreshImpl(now);
   } catch {
     // 后台查版本失败不影响自检。
   }
   const current = state.readState(sessionId, now);
   const token = crypto.randomBytes(12).toString('base64url');
   state.startCheck(current, { turnId: input.turn_id, token }, now);
+  let notice = '';
+  try {
+    notice = update.takePromptNotice(now);
+  } catch {
+    notice = '';
+  }
+  const extra = notice ? `${notice} ` : '';
 
   if (current.status === 'degraded' && state.isApprovalPrompt(prompt)) {
     state.approveSession(current, now);
@@ -149,7 +156,7 @@ function handleUserPromptSubmit(input, now) {
     return {
       hookSpecificOutput: {
         hookEventName: 'UserPromptSubmit',
-        additionalContext: `${APPROVED_NOTE} ${buildInstructions(token)}`
+        additionalContext: `${extra}${APPROVED_NOTE} ${buildInstructions(token)}`
       },
       systemMessage: APPROVED_MESSAGE
     };
@@ -159,13 +166,6 @@ function handleUserPromptSubmit(input, now) {
   const prefix = current.status === 'degraded_approved'
     ? `${APPROVED_NOTE} `
     : (current.status === 'degraded' ? `${PAUSED_NOTE} ` : '');
-  let notice = '';
-  try {
-    notice = update.takePromptNotice(now);
-  } catch {
-    notice = '';
-  }
-  const extra = notice ? `${notice} ` : '';
 
   return {
     hookSpecificOutput: {

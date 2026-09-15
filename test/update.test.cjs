@@ -26,17 +26,19 @@ test('版本比较：只有三段数字且远程更大才算新', () => {
   assert.equal(update.compareVersions('0.1.6', '0.1.7'), -1);
   assert.equal(update.isNewer('0.1.8', '0.1.7'), true);
   assert.equal(update.isNewer('0.1.7', '0.1.7'), false);
+  assert.equal(update.isNewer('0.1.14+codex.local', '0.1.13'), true);
+  assert.equal(update.isNewer('0.1.14+codex.local', '0.1.14'), false);
   assert.equal(update.isNewer('oops', '0.1.7'), false);
 });
 
-test('每个远程版本只通知一次；没跑满提醒间隔不走 Stop', () => {
+test('本地未更新时每次都通知；没跑满提醒间隔不走 Stop', () => {
   const record = {
     lastNotifiedVersion: null,
     lastNotifiedAt: 0,
     lastStopRemindedVersion: null
   };
   assert.equal(update.shouldNotify(record, '0.1.7', '0.1.8'), true);
-  assert.equal(update.shouldNotify({ ...record, lastNotifiedVersion: '0.1.8' }, '0.1.7', '0.1.8'), false);
+  assert.equal(update.shouldNotify({ ...record, lastNotifiedVersion: '0.1.8' }, '0.1.7', '0.1.8'), true);
   assert.equal(update.shouldNotify({ ...record, lastNotifiedVersion: '0.1.8' }, '0.1.7', '0.1.9'), true);
   assert.equal(update.shouldNotify(record, '0.1.8', '0.1.8'), false);
 
@@ -69,7 +71,7 @@ test('UPDATE_CHECK=0 时不检查也不通知', () => {
   }
 });
 
-test('UserPromptSubmit 发现新版本时注入转述，同一版本第二次不再注入', () => {
+test('UserPromptSubmit 发现新版本时，每个用户回合都注入转述', () => {
   const now = Date.now();
   update.saveRecord({
     lastCheckAt: now,
@@ -83,7 +85,7 @@ test('UserPromptSubmit 发现新版本时注入转述，同一版本第二次不
     session_id: 'upd-1',
     turn_id: 't1',
     prompt: '干活'
-  }, now);
+  }, now, () => true);
   const context = first.hookSpecificOutput.additionalContext;
   assert.match(context, /0\.1\.8/);
   assert.match(context, /marketplace upgrade/);
@@ -94,8 +96,32 @@ test('UserPromptSubmit 发现新版本时注入转述，同一版本第二次不
     session_id: 'upd-1',
     turn_id: 't2',
     prompt: '继续干活'
-  }, now + 1);
-  assert.doesNotMatch(second.hookSpecificOutput.additionalContext, /【插件更新】/);
+  }, now + 1, () => true);
+  assert.match(second.hookSpecificOutput.additionalContext, /【插件更新】/);
+});
+
+test('用户回复继续时也保留更新提醒', () => {
+  const now = Date.now();
+  update.saveRecord({
+    lastCheckAt: now,
+    latestRemote: '0.1.8',
+    lastNotifiedVersion: '0.1.8',
+    lastNotifiedAt: now,
+    lastStopRemindedVersion: null
+  });
+  const current = state.defaultState('upd-approved', now);
+  current.status = 'degraded';
+  current.usedDegraded = true;
+  state.writeState(current, now);
+
+  const result = guard.handleUserPromptSubmit({
+    hook_event_name: 'UserPromptSubmit',
+    session_id: 'upd-approved',
+    turn_id: 't1',
+    prompt: '继续'
+  }, now + 1, () => true);
+  assert.match(result.hookSpecificOutput.additionalContext, /【插件更新】/);
+  assert.match(result.hookSpecificOutput.additionalContext, /已获用户确认放行/);
 });
 
 test('Stop：降智提醒优先；否则隔几天补一句更新', () => {
@@ -163,7 +189,7 @@ test('后台检查失败保持静默，不改已有远程版本', async () => {
   }
 });
 
-test('检查间隔内不重复拉起进程', () => {
+test('每个用户回合都重新拉起版本检查', () => {
   const now = Date.now();
   update.saveRecord({
     lastCheckAt: now,
@@ -172,10 +198,11 @@ test('检查间隔内不重复拉起进程', () => {
     lastNotifiedAt: 0,
     lastStopRemindedVersion: null
   });
-  const kicked = update.ensureFresh(now + 1000, () => {
-    throw new Error('should not spawn');
-  });
-  assert.equal(kicked, false);
+  let calls = 0;
+  const spawn = () => { calls += 1; };
+  assert.equal(update.ensureFresh(now + 1000, spawn), true);
+  assert.equal(update.ensureFresh(now + 1001, spawn), true);
+  assert.equal(calls, 2);
 });
 
 test('过期清理不会删掉 update.json', () => {

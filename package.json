@@ -1,6 +1,6 @@
 {
   "name": "model-degradation-guard",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "private": true,
   "description": "Codex 插件：写删前检查本轮是否被路由到弱模型，命中后暂停并询问。",
   "author": "HUTAO667",

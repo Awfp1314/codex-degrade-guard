@@ -233,7 +233,7 @@ npm test
 ## 隐私与副作用
 
 - **读取**：当前会话 rollout transcript，只取本轮 assistant 文本与工具调用。打分全部本地解析。
-- **联网**：默认每天最多一次访问 GitHub 上的 `plugin.json` 看有没有新版本。失败则静默。不自动安装。`MODEL_DEGRADATION_GUARD_UPDATE_CHECK=0` 可关。
+- **联网**：每次用户消息触发时访问 GitHub 上的 `plugin.json` 看有没有新版本；只要本地版本落后，就让模型在回复里持续提醒。失败则静默，不自动安装。`MODEL_DEGRADATION_GUARD_UPDATE_CHECK=0` 可关。
 - **写入**：`$CODEX_HOME/model-degradation-guard/<session_id>.json`（7 天后清理），以及同目录 `update.json`。
 - **注入**：每轮向模型上下文追加一段自检要求（含一次性 token）；有新版本时另加一句请模型转述。
 - **拦截**：会对写/删工具返回 `deny`；回复「继续」后本会话不再拦截。
