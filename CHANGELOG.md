@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.18] - 2026-09-15
+
+### Changed
+
+- 发布新的缓存版本，用于验证 Agent 收到更新提示后能直接代用户完成插件更新
+
 ## [0.1.17] - 2026-09-15
 
 ### Fixed

@@ -35,7 +35,7 @@ test('版本比较：只有三段数字且远程更大才算新', () => {
 
 test('包版本与插件清单版本保持同步', () => {
   assert.equal(update.compareVersions(pluginManifest.version, packageManifest.version), 0);
-  assert.equal(update.isNewer(pluginManifest.version, '0.1.16'), true);
+  assert.equal(update.isNewer(pluginManifest.version, '0.1.17'), true);
 });
 
 test('更新提示强制出现在最终答复，不能只放在折叠过程里', () => {
