@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### Fixed
+
+- 鹈鹕体检会把未见降智参考图复制到探针临时目录，避免插件缓存目录中的图片无法在客户端加载
+
 ## [0.1.13] - 2026-09-15
 
 ### Changed

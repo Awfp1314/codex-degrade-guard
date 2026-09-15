@@ -176,6 +176,13 @@ function screenshotHtml(htmlFile) {
   return { path: null, error: `截图失败：${lastError}` };
 }
 
+function stageReferenceImage(workspace) {
+  if (!fs.existsSync(REFERENCE_IMAGE)) return null;
+  const staged = path.join(workspace, 'pelican-reference.png');
+  fs.copyFileSync(REFERENCE_IMAGE, staged);
+  return staged;
+}
+
 function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
@@ -203,6 +210,7 @@ function report(run, workspace, options) {
   const hints = keywordHints({ paragraph, reasoning });
   const status = statusFromRun({ htmlFiles: html, timedOut: run.timedOut, failure: run.failure });
   const shot = html[0] ? screenshotHtml(html[0]) : { path: null, error: null };
+  const referenceImage = stageReferenceImage(workspace);
   const usage = probe.usageOf(run.events);
 
   const result = {
@@ -217,7 +225,7 @@ function report(run, workspace, options) {
     htmlFiles: html,
     screenshot: shot.path,
     screenshotError: shot.error,
-    referenceImage: fs.existsSync(REFERENCE_IMAGE) ? REFERENCE_IMAGE : null,
+    referenceImage,
     referenceImageUrl: REFERENCE_IMAGE_URL,
     workspace,
     usage,
@@ -239,7 +247,7 @@ function report(run, workspace, options) {
   const lines = [
     `鹈鹕骑车测试：${label}`,
     `依据：${status.reasons.join('；')}`,
-    `参考图：${fs.existsSync(REFERENCE_IMAGE) ? REFERENCE_IMAGE : REFERENCE_IMAGE_URL}`,
+    `参考图：${referenceImage || REFERENCE_IMAGE_URL}`,
     shot.path ? `本次截图：${shot.path}` : (shot.error ? `本次截图：${shot.error}` : '本次截图：无'),
     html.length ? `产出 HTML：${html.join(', ')}` : '产出：没有生成 HTML 文件',
     `模型：${options.model} / ${options.reasoningEffort}`,
@@ -274,5 +282,6 @@ module.exports = {
   main,
   report,
   screenshotHtml,
+  stageReferenceImage,
   statusFromRun
 };

@@ -14,7 +14,7 @@ process.env.MODEL_DEGRADATION_GUARD_STATE_DIR = stateDir;
 const sessionState = require('../lib/state.cjs');
 
 const { agentMessages, buildExecArgs, runCodexExec, shouldRetryWithoutHooks } = require('../probes/lib.cjs');
-const { keywordHints, statusFromRun, findBrowser, screenshotHtml, parseArgs, DEFAULT_MODEL, DEFAULT_REASONING_EFFORT, DEFAULT_PELICAN_TIMEOUT_MS, PROMPT: PELICAN_PROMPT } = require('../probes/pelican.cjs');
+const { keywordHints, statusFromRun, findBrowser, screenshotHtml, stageReferenceImage, parseArgs, DEFAULT_MODEL, DEFAULT_REASONING_EFFORT, DEFAULT_PELICAN_TIMEOUT_MS, PROMPT: PELICAN_PROMPT, REFERENCE_IMAGE } = require('../probes/pelican.cjs');
 const { runAll, summarize, PROMPT: CANDY_PROMPT, ANSWER_PATTERN } = require('../probes/candy.cjs');
 const { candySummary, pelicanSummary } = require('../scripts/mcp-server.cjs');
 
@@ -63,6 +63,18 @@ test('本机有 Chrome/Edge 时能给本地 HTML 截图', { skip: !findBrowser()
     assert.equal(shot.error, null, shot.error);
     assert.ok(shot.path && fs.existsSync(shot.path));
     assert.ok(fs.statSync(shot.path).size > 100);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('鹈鹕参考图复制到探针临时工作区，避免插件缓存路径无法加载', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mdg-reference-'));
+  try {
+    const staged = stageReferenceImage(dir);
+    assert.equal(path.dirname(staged), dir);
+    assert.notEqual(staged, REFERENCE_IMAGE);
+    assert.deepEqual(fs.readFileSync(staged), fs.readFileSync(REFERENCE_IMAGE));
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
