@@ -15,6 +15,8 @@ process.env.MODEL_DEGRADATION_GUARD_LOCAL_VERSION = '0.1.7';
 const update = require('../lib/update.cjs');
 const guard = require('../hooks/guard.cjs');
 const state = require('../lib/state.cjs');
+const packageManifest = require('../package.json');
+const pluginManifest = require('../.codex-plugin/plugin.json');
 
 test.after(() => {
   fs.rmSync(stateDir, { recursive: true, force: true });
@@ -29,6 +31,11 @@ test('版本比较：只有三段数字且远程更大才算新', () => {
   assert.equal(update.isNewer('0.1.14+codex.local', '0.1.13'), true);
   assert.equal(update.isNewer('0.1.14+codex.local', '0.1.14'), false);
   assert.equal(update.isNewer('oops', '0.1.7'), false);
+});
+
+test('包版本与插件清单版本保持同步', () => {
+  assert.equal(update.compareVersions(pluginManifest.version, packageManifest.version), 0);
+  assert.equal(update.isNewer(pluginManifest.version, '0.1.14'), true);
 });
 
 test('本地未更新时每次都通知；没跑满提醒间隔不走 Stop', () => {

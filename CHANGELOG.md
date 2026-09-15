@@ -2,6 +2,12 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.1.15] - 2026-09-15
+
+### Changed
+
+- 提升版本号，用于验证本地版本落后时模型会立即提醒更新
+
 ## [0.1.14] - 2026-09-15
 
 ### Fixed
