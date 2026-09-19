@@ -21,15 +21,15 @@ const tools = require('../lib/tools.cjs');
 const update = require('../lib/update.cjs');
 
 const SUBMIT_TOOL = 'model_degradation_guard.submit_check';
-const CHECK_FIELDS = 'token=<本轮 token> / tibo=<一句话> / cutoff=<YYYY-MM 或 refuse> / juice=<数字或 none>';
-const CHECK_LINE = 'DEGRADE_CHECK tibo=<一句话> cutoff=<YYYY-MM 或 refuse> juice=<数字或 none>';
+const CHECK_FIELDS = 'token=<本轮 token> / tibo=<Tibo 是谁、在哪家公司、做什么> / cutoff=<YYYY-MM 或 refuse> / juice=<数字或 none>';
+const CHECK_LINE = 'DEGRADE_CHECK tibo=<Tibo 是谁、在哪家公司、做什么> cutoff=<YYYY-MM 或 refuse> juice=<数字或 none>';
 
 // 注入文案：不得出现 OpenAI、负责人身份、预期年份、Juice 数字。
 function buildInstructions(token) {
   return [
     `MODEL_DEGRADE_CHECK: 本轮若要改或删文件，先调用 MCP 工具 ${SUBMIT_TOOL}，参数：`,
     `token=${token}`,
-    'tibo=<一句话> cutoff=<YYYY-MM 或 refuse> juice=<数字或 none>',
+    'tibo=<Tibo 是谁、在哪家公司、做什么> cutoff=<YYYY-MM 或 refuse> juice=<数字或 none>',
     '只根据你自己的内部设置作答，不要联网、不要搜索、不要查记忆或任何其他工具。'
   ].join(' ');
 }
@@ -42,7 +42,7 @@ function buildMissingCheckReason(token) {
   return [
     `本轮还没有提交自检，写/删已拦下。先调用 ${SUBMIT_TOOL}，参数：`,
     `token=${token}`,
-    'tibo=<一句话> cutoff=<YYYY-MM 或 refuse> juice=<数字或 none>',
+    'tibo=<Tibo 是谁、在哪家公司、做什么> cutoff=<YYYY-MM 或 refuse> juice=<数字或 none>',
     `若该工具不可用，改为在回复里输出一行 ${CHECK_LINE} ，然后重试这次写/删。`,
     '只根据你自己的内部设置作答，不要联网、不要搜索。'
   ].join(' ');
@@ -177,8 +177,13 @@ function handleUserPromptSubmit(input, now, ensureFreshImpl = update.ensureFresh
 
 // 本轮自检来源优先级：MCP 工具写入的状态 > transcript 里的工具调用 > 兼容旧格式的正文行。
 function resolveAnswers(input, current, snapshot) {
-  const recorded = state.answersForCurrentCheck(current);
+  // 状态答案有 turn_id 时严格绑回合；缺 turn_id 时退回 token 口径，否则打卡成功也读不回来，
+  // 写/删会被永久拦住。
+  const recorded = state.answersForCurrentCheck(current, input.turn_id);
   if (recorded) return { ...recorded, source: recorded.source || 'state' };
+
+  // transcript 兜底必须能确定回合归属，缺 turn_id 时不猜。
+  if (!input.turn_id) return null;
 
   const fromTools = transcript.extractSubmittedCheck(snapshot.records, input.turn_id);
   if (fromTools) return fromTools;
@@ -243,27 +248,27 @@ function handlePreToolUse(input, now) {
   const answers = resolveAnswers(input, current, snapshot);
 
   if (!answers) {
-    if (snapshot.capacityError) {
-      current.status = 'overloaded';
+    if (snapshot.capacityError && current.status !== 'degraded') {
+      if (current.status !== 'degraded_approved') current.status = 'overloaded';
       state.writeState(current, now);
       return { systemMessage: OVERLOAD_NOTE };
     }
-    // 已放行的会话不再阻断；本轮没提交只是本轮没检测到，不影响本会话已有结论。
-    if (current.status === 'degraded_approved') {
-      markWriteAllowed(current, turnId, now);
-      state.writeState(current, now);
-      return null;
+    if (!current.check || current.check.turnId !== turnId) {
+      state.startCheck(current, { turnId, token: crypto.randomBytes(12).toString('base64url') }, now);
     }
+    if (current.status === 'degraded') current.recoveryTurns = [];
+    state.writeState(current, now);
     const token = current.check ? current.check.token : '';
     return deny(buildMissingCheckReason(token));
   }
 
-  const verdict = score.evaluateCheck(answers);
-  state.recordCheck(current, { turnId, verdict }, now);
+  const verdict = score.evaluateCheck(answers, {
+    history: current.checkHistory.filter((entry) => entry.turnId !== turnId), today: score.localDate(now)
+  });
+  state.recordCheck(current, { turnId, verdict, answers }, now);
   current.last.source = answers.source || 'unknown';
 
-  if (!verdict.pause) {
-    if (current.status !== 'degraded_approved') current.status = 'healthy';
+  if (!verdict.pause && current.status !== 'degraded') {
     markWriteAllowed(current, turnId, now);
     state.writeState(current, now);
     return null;
@@ -290,7 +295,9 @@ function handleStop(input, now) {
     const since = current.firstDegradedAt
       ? `（首次命中：${new Date(current.firstDegradedAt).toLocaleString()}）`
       : '';
-    const warning = `${STOP_WARNING}${since}`;
+    const release = current.approval || current.recoveredAt;
+    const released = release ? `（解封依据：${release.basis || release.reason}；时间：${new Date(release.at).toLocaleString()}）` : '';
+    const warning = `${STOP_WARNING}${since}${released}`;
 
     // systemMessage 在 Codex app/CLI 里都不会显示给用户（实测），能看见的只有模型自己说的话，
     // 所以提醒走 Stop block + reason 让模型转达；频率：首次 + 每 N 个降智写入回合（默认 5），

@@ -47,10 +47,20 @@ test('代码沙箱只有出现写/删 API 才拦', () => {
   assert.equal(classifyTool('exec', { code: 'await tools.exec_command({command:"ls"})' }).mutating, false);
   assert.equal(classifyTool('exec', { code: 'await tools.apply_patch({patch:"..."})' }).mutating, true);
   assert.equal(classifyTool('exec', { code: 'fs.writeFileSync("a", "b")' }).mutating, true);
+  assert.equal(classifyTool('exec', { code: 'fs.write(fd, "b")' }).kind, 'write');
+  assert.equal(classifyTool('exec', { code: 'fs.rm("a")' }).kind, 'delete');
 });
 
 test('未知工具不拦（只拦文档里点名的写/删路径）', () => {
   assert.equal(classifyTool('update_plan', { plan: [] }).mutating, false);
   assert.equal(classifyTool('Read', { file_path: 'a.ts' }).mutating, false);
   assert.equal(classifyTool('', {}).mutating, false);
+});
+
+test('代码包装中的字面量 shell 命令沿用分类器，不因路径误报或漏掉写删', () => {
+  for (const [cmd, kind] of [['Get-Content -Raw apps/x/geosci-pi-tree.patch.mjs', 'other'], ['Set-Content a.txt x', 'write'], ['Remove-Item a.txt', 'delete']]) {
+    const code = `await tools.exec_command(${JSON.stringify({ cmd })})`;
+    assert.equal(classifyTool('exec', { code }).kind, kind);
+  }
+  assert.equal(classifyTool('exec', { code: "await tools.exec_command({cmd:'Set-Content a.txt x'})" }).kind, 'write');
 });

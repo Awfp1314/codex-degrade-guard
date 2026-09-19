@@ -45,6 +45,7 @@ test('recordCheck 记录三字段并在暂停时标记 usedDegraded', () => {
   const current = state.readState('session-b');
   state.recordCheck(current, {
     turnId: 'turn-1',
+    answers: { tibo: 'ok', cutoff: 'refuse', juice: '64' },
     verdict: { tibo: 'pass', cutoff: 'refuse', juice: 'positive', pause: false, reason: null }
   }, 1700000000000);
   assert.equal(current.usedDegraded, false);
@@ -60,11 +61,14 @@ test('recordCheck 记录三字段并在暂停时标记 usedDegraded', () => {
 
   state.recordCheck(current, {
     turnId: 'turn-2',
+    answers: { tibo: '不认识', cutoff: 'refuse', juice: 'none' },
     verdict: { tibo: 'fail', cutoff: 'refuse', juice: 'none', pause: true, reason: 'tibo_fail' }
   }, 1700000001000);
   assert.equal(current.usedDegraded, true);
   assert.equal(current.firstDegradedAt, 1700000001000);
   assert.equal(current.last.reason, 'tibo_fail');
+  assert.equal(current.checkHistory.length, 2);
+  assert.equal(current.checkHistory[1].juice, 'none');
 
   // 首次命中时间不会被后续命中覆盖。
   state.recordCheck(current, {
@@ -147,8 +151,13 @@ test('answersForCurrentCheck 只认当前轮令牌的答案', () => {
   current.answers = { token: 'tok-0', tibo: 'stale' };
   assert.equal(state.answersForCurrentCheck(current), null);
 
-  current.answers = { token: 'tok-1', tibo: 'fresh' };
+  current.answers = { token: 'tok-1', turnId: 'turn-1', tibo: 'fresh' };
+  assert.equal(state.answersForCurrentCheck(current, 'turn-1').tibo, 'fresh');
+  assert.equal(state.answersForCurrentCheck(current, 'turn-child'), null);
+  // 缺 turn_id（Codex 未提供）时退回 token 口径，否则打卡写回的答案永远读不到。
   assert.equal(state.answersForCurrentCheck(current).tibo, 'fresh');
+  current.answers.turnId = 'turn-stale';
+  assert.equal(state.answersForCurrentCheck(current, 'turn-1'), null);
 
   // 新的一轮刷新 token 后，上一轮答案自动失效。
   state.startCheck(current, { turnId: 'turn-2', token: 'tok-2' }, 1700000000000);

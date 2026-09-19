@@ -104,12 +104,13 @@ test('只读文件末尾也能拿到本轮内容（长会话截断安全）', ()
   assert.match(snapshot.text, /tibo=结尾/);
 });
 
-test('兼容 Claude 风格 transcript', () => {
+test('没有回合标识的 Claude 风格 transcript 不可作为本轮答案', () => {
   const file = writeRollout('claude.jsonl', [
     { type: 'user', message: { role: 'user', content: [{ type: 'text', text: 'hi' }] } },
     { type: 'assistant', message: { role: 'assistant', content: [{ type: 'text', text: 'DEGRADE_CHECK tibo=x cutoff=refuse juice=none' }] } }
   ]);
   const snapshot = readTurnAssistantText(file, undefined);
   assert.equal(snapshot.ok, true);
-  assert.match(snapshot.text, /tibo=x/);
+  assert.equal(snapshot.text, '');
+  assert.deepEqual(snapshot.records, []);
 });

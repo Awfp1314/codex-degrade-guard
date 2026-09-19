@@ -124,7 +124,8 @@ test('MCP 提交的 Tibo 失败：暂停并落 degraded 状态', () => {
   assert.equal(saved.last.source, 'state');
 });
 
-test('Tibo 正确 + 只有截止年金丝雀：放行且不暂停', () => {
+// Breaking: 具体截止日期从旁证提升为独立暂停信号。
+test('Tibo 正确 + 具体截止日期：仍暂停', () => {
   const sessionId = 'session-canary';
   beginTurn(sessionId, 'turn-1', {
     tibo: 'Thibault Sottiaux 是 OpenAI 的工程负责人，不需要搜索',
@@ -132,12 +133,12 @@ test('Tibo 正确 + 只有截止年金丝雀：放行且不暂停', () => {
     juice: '128'
   });
   const transcript = makeTranscript('turn-1', '开始干活');
-  assert.equal(guard.handleHook(preToolInput(sessionId, 'turn-1', transcript)), null);
+  assert.equal(guard.handleHook(preToolInput(sessionId, 'turn-1', transcript)).hookSpecificOutput.permissionDecision, 'deny');
 
   const saved = state.readState(sessionId);
-  assert.equal(saved.status, 'healthy');
-  assert.equal(saved.usedDegraded, false);
-  assert.equal(saved.last.cutoff, 'canary');
+  assert.equal(saved.status, 'degraded');
+  assert.equal(saved.usedDegraded, true);
+  assert.equal(saved.last.cutoff, 'concrete');
 });
 
 test('Tibo 含糊 + 2024-06 + juice=0：暂停', () => {
@@ -146,7 +147,7 @@ test('Tibo 含糊 + 2024-06 + juice=0：暂停', () => {
   const transcript = makeTranscript('turn-1', '继续');
   const output = guard.handleHook(preToolInput(sessionId, 'turn-1', transcript));
   assert.equal(output.hookSpecificOutput.permissionDecision, 'deny');
-  assert.equal(state.readState(sessionId).last.reason, 'tibo_ambiguous_with_canary');
+  assert.equal(state.readState(sessionId).last.reason, 'cutoff_concrete_date');
 });
 
 test('transcript 里的 MCP 工具调用可以充当答案（状态没写成功时的兜底）', () => {
@@ -209,17 +210,19 @@ test('放行后即使换成另一种降智情形也不阻断，但继续记录',
   const saved = state.readState(sessionId);
   assert.equal(saved.status, 'degraded_approved');
   assert.equal(saved.usedDegraded, true);
-  assert.equal(saved.last.reason, 'tibo_ambiguous_with_canary');
+  assert.equal(saved.last.reason, 'cutoff_concrete_date');
 });
 
-test('放行后本轮没提交也不阻断', () => {
+// 批准只豁免分数，不能豁免本轮打卡，否则子线程可借用父会话放行。
+test('放行后本轮没提交仍须先打卡', () => {
   const sessionId = 'session-approve-empty';
   beginTurn(sessionId, 'turn-1', { tibo: '不认识', cutoff: 'refuse', juice: 'none' });
   guard.handleHook(preToolInput(sessionId, 'turn-1', makeTranscript('turn-1', '动手')));
   guard.handleHook(promptInput(sessionId, '继续', 'turn-2'));
 
   beginTurn(sessionId, 'turn-2');
-  assert.equal(guard.handleHook(preToolInput(sessionId, 'turn-2', makeTranscript('turn-2', '我直接开始改代码'))), null);
+  const output = guard.handleHook(preToolInput(sessionId, 'turn-2', makeTranscript('turn-2', '我直接开始改代码')));
+  assert.match(output.hookSpecificOutput.permissionDecisionReason, /本轮还没有提交自检/);
 });
 
 test('没有暂停时，用户随口说「继续」不会把状态改成已批准', () => {
@@ -410,7 +413,7 @@ test('UserPromptSubmit 每轮都注入 token 与自检要求，文案不泄题',
   const token = /token=([A-Za-z0-9_-]+)/.exec(context)[1];
   assert.equal(state.readState('session-inject').check.token, token);
   assert.equal(state.readState('session-inject').check.turnId, 'turn-inject');
-  assert.match(context, /tibo=<一句话> cutoff=<YYYY-MM 或 refuse> juice=<数字或 none>/);
+  assert.match(context, /tibo=<Tibo 是谁、在哪家公司、做什么> cutoff=<YYYY-MM 或 refuse> juice=<数字或 none>/);
   assertNoLeak(context.replace(new RegExp(token, 'g'), ''));
   assert.match(context, /不要联网|不要搜索/);
 });

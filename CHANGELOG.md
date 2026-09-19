@@ -2,6 +2,51 @@
 
 按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 组织，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [0.2.2] - 2026-09-16
+
+### Fixed
+
+- 修复 Codex Desktop 重启后 hook 不注册：将 `UserPromptSubmit`、`PreToolUse`、`Stop` 从外部路径字符串改为 `.codex-plugin/plugin.json` 内嵌清单对象。
+- 修复 Codex 未提供 `turn_id` 时状态答案读不回来、打卡成功也把写/删永久拦住：缺 `turn_id` 时状态答案退回只比 token，transcript 兜底仍要求回合归属，不重新引入父子回合串用。
+- 同步提升 `package.json` 与插件清单版本，避免同版本缓存覆盖。
+
+## [0.2.1] - 2026-09-16
+
+### Fixed
+
+- 人名与错误归属词同时出现时直接 fail，独立暂停并记录 `tibo_wrong_affiliation`；覆盖 Anthropic/Claude、Google/DeepMind/Gemini 等指定名单，优先于正确公司关键词，不依赖 cutoff 或 Juice。
+- 新增两条实测错误归属、完整名单、三种 cutoff 模式和正确真实回答回归，以及 hook deny 与状态落盘断言。
+
+### Changed
+
+- 包与清单同步升级 0.2.1，通过新版本目录安装，禁止同版本覆盖。
+- README 增加“安装与生效校验”：验证实际 cache 的 mtime、concrete 行数、直接评分、配置指向与文件哈希；本地源避免远端 upgrade 覆盖，GitHub 源必须先 push 再 upgrade。
+
+## [0.2.0] - 2026-09-16
+
+### Breaking
+
+- 推翻“仅 2024-06 是截止金丝雀”：cutoff 改为 concrete / grounded / vague / missing；任何具体截止日期默认独立暂停，原因 `cutoff_concrete_date`。拒答不再等同通过，含糊 + 自发当天日期才是 grounding 健康证据，且不能抵消其他失败或单独解封。
+- 使用本地日期 YYYY-MM-DD，完整日期容差 ±1 天；提取全部日期，年月/年份仍算具体日期。注入文案不要求模型填写当天日期。
+- 降智状态不再由单次非暂停结果洗白；明确用户批准，或连续 N 个不同回合均非暂停且 Tibo pass（默认 3）才解封。批准后仍须本轮打卡，无法归属回合的旧答案不再作为当前答案。
+- 0.x 开发阶段将破坏性口径升级为 0.2.0；package.json 与插件清单版本同步。
+
+### Fixed
+
+- 修复 0.1.19 对整条命令做裸词匹配导致 `.patch.mjs` 只读误报：先分段及保护引号/路径，再匹配命令位置；全段只读且无重定向才优先放行，混合命令先判删再判写。补全 PowerShell 管道白名单、cmd 入参和 stderr 文件重定向。
+- 修复 degraded 被后续自报或 capacity 洗白：持久化恢复进度、批准依据与恢复时间，同轮工具重试不重复计数，Stop 提醒附解封依据。
+- 修复父线程/上一轮答案跨 turn_id 复用：状态答案匹配 token 与当前回合；子回合缺打卡 deny 并发新 token；transcript 切片和 JSON 工具参数解析保证只读当前回合答案。
+
+### Added
+
+- `MODEL_DEGRADATION_GUARD_CONCRETE_CUTOFF_MODE=pause|flag|off`：默认暂停，flag 记录新信号用于人工估计误报率，off 恢复旧 cutoff 口径；既有 Tibo 和组合规则保留。
+- `MODEL_DEGRADATION_GUARD_RECOVERY_PASSES` 配置恢复阈值；`checkHistory.cutoffConcrete` 用于统计，`recoveredAt` 记录自动恢复依据。
+- 原始 Windows 组合命令、混合写删、回合绑定、恢复中断、日期各形态、配置回滚、异常放行回归。改写旧评分断言并注明原因，保留低 Juice 单变量和旧组合模式覆盖。
+
+### Security Boundary
+
+- 未知命令保持默认放行；本插件只覆盖显式写/删特征，不作为安全边界。README 和设计文档明确动态脚本、别名、缓存写入的漏报取舍。钩子异常/超时/不可读 transcript 仍 fail-open，拦截仍使用 deny。
+
 ## [0.1.18] - 2026-09-15
 
 ### Changed
